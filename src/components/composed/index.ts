@@ -28,3 +28,4 @@ export {
   OnboardingModal,
   type OnboardingModalProps,
 } from "./OnboardingModal";
+export { ServamindLogo } from "./ServamindLogo";

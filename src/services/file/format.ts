@@ -1,4 +1,4 @@
-import { KILOBYTE, MEGABYTE, GIGABYTE } from "@/config/constants";
+import { KILOBYTE, MEGABYTE, GIGABYTE, TERABYTE } from "@/config/constants";
 import { getFileExtension } from "./validation";
 
 export function getFileTypeLabel(file: File): string {
@@ -7,6 +7,9 @@ export function getFileTypeLabel(file: File): string {
 }
 
 export function formatFileSize(bytes: number): string {
+  if (bytes >= TERABYTE) {
+    return `${(bytes / TERABYTE).toFixed(2)} TB`;
+  }
   if (bytes >= GIGABYTE) {
     return `${(bytes / GIGABYTE).toFixed(2)} GB`;
   }

@@ -1,81 +1,13 @@
 import { useState, useCallback, type FormEvent } from "react";
 import { createPortal } from "react-dom";
+import { GoogleLogin } from "@react-oauth/google";
+import { ServamindLogo } from "./ServamindLogo";
 
 interface OnboardingModalProps {
   open: boolean;
   onEmailSubmit: (email: string) => void;
-  onGoogleSignIn: () => void;
+  onGoogleCredential: (credential: string) => void;
   onAppleSignIn: () => void;
-}
-
-function ServamindLogo() {
-  return (
-    <svg
-      width="44"
-      height="44"
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="text-serva-purple"
-    >
-      <rect
-        x="15"
-        y="5"
-        width="70"
-        height="90"
-        rx="4"
-        stroke="currentColor"
-        strokeWidth="3"
-        fill="none"
-      />
-      <circle cx="50" cy="26" r="9" stroke="currentColor" strokeWidth="3" />
-      <line
-        x1="50"
-        y1="35"
-        x2="50"
-        y2="65"
-        stroke="currentColor"
-        strokeWidth="3"
-      />
-      <line
-        x1="50"
-        y1="42"
-        x2="25"
-        y2="34"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <line
-        x1="50"
-        y1="42"
-        x2="75"
-        y2="34"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <line
-        x1="50"
-        y1="65"
-        x2="30"
-        y2="85"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <line
-        x1="50"
-        y1="65"
-        x2="70"
-        y2="85"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <circle cx="50" cy="50" r="28" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  );
 }
 
 function GoogleIcon() {
@@ -130,7 +62,7 @@ function Divider() {
 function OnboardingModal({
   open,
   onEmailSubmit,
-  onGoogleSignIn,
+  onGoogleCredential,
   onAppleSignIn,
 }: OnboardingModalProps) {
   const [email, setEmail] = useState("");
@@ -153,10 +85,7 @@ function OnboardingModal({
         <div className="flex flex-col items-center text-center">
           <div className="flex items-center gap-2 mb-6">
             <ServamindLogo />
-            <span className="text-xl font-bold tracking-tight text-serva-gray-600 uppercase font-display">
-              servamind
-            </span>
-            <span className="ml-1 px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase bg-light-200 text-serva-gray-300 rounded">
+            <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase bg-serva-gray-100 text-serva-gray-400 rounded-[3px]">
               Beta
             </span>
           </div>
@@ -173,7 +102,7 @@ function OnboardingModal({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Personal or work email"
-              className="w-full rounded-xl border border-light-200 px-5 py-4 text-base text-serva-gray-600 placeholder:text-serva-gray-100 focus:border-2 focus:border-serva-purple focus:outline-none transition-colors"
+              className="w-full rounded-[7px] border border-[#EAEAEA] px-4 py-3 text-sm text-serva-gray-600 placeholder:text-serva-gray-400 focus:border-2 focus:border-serva-purple focus:outline-none transition-colors"
             />
           </form>
 
@@ -182,18 +111,27 @@ function OnboardingModal({
           </div>
 
           <div className="w-full flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={onGoogleSignIn}
-              className="flex items-center justify-center gap-3 w-full rounded-[7px] bg-[#1C011E] text-white font-medium py-4 text-base hover:bg-[#1C011E]/90 active:bg-[#1C011E]/80 transition-colors cursor-pointer"
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
+            <div className="relative w-full">
+              <div className="flex items-center justify-center gap-3 w-full rounded-[7px] bg-[#1C011E] text-white font-medium py-3 text-sm">
+                <GoogleIcon />
+                Continue with Google
+              </div>
+              <div className="absolute inset-0 overflow-hidden rounded-[7px] opacity-0 cursor-pointer">
+                <GoogleLogin
+                  onSuccess={(response) => {
+                    if (response.credential) {
+                      onGoogleCredential(response.credential);
+                    }
+                  }}
+                  size="large"
+                  width="400"
+                />
+              </div>
+            </div>
             <button
               type="button"
               onClick={onAppleSignIn}
-              className="flex items-center justify-center gap-3 w-full rounded-[7px] bg-[#1C011E] text-white font-medium py-4 text-base hover:bg-[#1C011E]/90 active:bg-[#1C011E]/80 transition-colors cursor-pointer"
+              className="flex items-center justify-center gap-3 w-full rounded-[7px] bg-[#1C011E] text-white font-medium py-3 text-sm hover:bg-[#1C011E]/90 active:bg-[#1C011E]/80 transition-colors cursor-pointer"
             >
               <AppleIcon />
               Continue with Apple
