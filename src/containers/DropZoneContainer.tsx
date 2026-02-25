@@ -2,29 +2,38 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { UploadStageView, PrivateKeyModal } from "@/components/composed";
 import { useDropZone } from "@/hooks/behavior";
 import { useFileValidation } from "@/hooks/behavior";
-import { useFileUpload } from "@/hooks/data";
+import { useEncode, useDecode } from "@/hooks/data";
 import { useWorkflow } from "@/contexts/WorkflowContext";
-import { computeSha256, getFileTypeLabel, formatFileSize } from "@/services/file";
+import { getFileTypeLabel, formatFileSize, validateFileSize } from "@/services/file";
 import type { FileTableItem } from "@/types/domain.types";
 
+type FileStatus = "ready" | "uploading" | "complete" | "error";
+
 function DropZoneContainer() {
-  const [file, setFile] = useState<File>();
-  const [hash, setHash] = useState<string>();
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileStatuses, setFileStatuses] = useState<Map<string, FileStatus>>(new Map());
   const [uploading, setUploading] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
-  const { mutate } = useFileUpload();
-  const { process, setStage, setProcess, setHasFile } = useWorkflow();
-  const { canCompress, canDecompress, sizeError } = useFileValidation(
-    file,
-    hash
-  );
+  const { mutateAsync: encodeAsync } = useEncode();
+  const { mutateAsync: decodeAsync } = useDecode();
+  const { process, setStage, setProcess, setHasFile, addFileResult } = useWorkflow();
 
-  const handleFileSelect = useCallback(async (selectedFile: File) => {
-    setFile(selectedFile);
+  const firstFile = files[0];
+  const { canCompress, canDecompress, sizeError } = useFileValidation(firstFile);
+
+  function fileKey(file: File) {
+    return `${file.name}:${file.size}`;
+  }
+
+  const handleFileSelect = useCallback((selectedFile: File) => {
+    setFiles((prev) => {
+      const key = `${selectedFile.name}:${selectedFile.size}`;
+      const alreadyAdded = prev.some((f) => `${f.name}:${f.size}` === key);
+      if (alreadyAdded) return prev;
+      return [...prev, selectedFile];
+    });
     setHasFile(true);
-    const checksum = await computeSha256(selectedFile);
-    setHash(checksum);
   }, [setHasFile]);
 
   const {
@@ -35,31 +44,74 @@ function DropZoneContainer() {
     handleDrop,
   } = useDropZone(handleFileSelect);
 
+  const setStatus = useCallback((file: File, status: FileStatus) => {
+    setFileStatuses((prev) => {
+      const next = new Map(prev);
+      next.set(fileKey(file), status);
+      return next;
+    });
+  }, []);
+
   const handleUpload = useCallback(
-    (compress: boolean, privateKey: string) => {
-      if (!file || !hash) return;
+    async (compress: boolean, privateKey: string) => {
+      if (files.length === 0) return;
       setUploading(true);
 
-      mutate({
-        file,
-        checksum: hash,
-        compress,
-        privateKey,
-        onComplete: () => {
-          setUploading(false);
-          setFile(undefined);
-          setHash(undefined);
-          setStage("processing");
-          setProcess(compress ? "compress" : "decompress");
-        },
-      });
+      try {
+        if (compress) {
+          for (const file of files) {
+            setStatus(file, "uploading");
+            const result = await encodeAsync({
+              file,
+              fileReference: crypto.randomUUID(),
+              idempotencyKey: crypto.randomUUID(),
+              userPassword: privateKey,
+            });
+            setStatus(file, "complete");
+            addFileResult({
+              fileName: file.name,
+              originalSize: file.size,
+              encodedSize: result.encodedSize,
+              fileId: result.init.file_id,
+              downloadUrl: result.init.download_url,
+            });
+          }
+          setProcess("compress");
+        } else {
+          for (const file of files) {
+            setStatus(file, "uploading");
+            await decodeAsync({
+              file,
+              fileReference: crypto.randomUUID(),
+              userPassword: privateKey,
+            });
+            setStatus(file, "complete");
+            addFileResult({
+              fileName: file.name,
+              originalSize: file.size,
+              encodedSize: null,
+              fileId: "",
+              downloadUrl: "",
+            });
+          }
+          setProcess("decompress");
+        }
+
+        setUploading(false);
+        setFiles([]);
+        setFileStatuses(new Map());
+        setStage("download");
+      } catch {
+        setUploading(false);
+        setStage("error");
+      }
     },
-    [file, hash, mutate, setStage, setProcess]
+    [files, encodeAsync, decodeAsync, setStage, setProcess, addFileResult, setStatus]
   );
 
   const handleClear = useCallback(() => {
-    setFile(undefined);
-    setHash(undefined);
+    setFiles([]);
+    setFileStatuses(new Map());
     setHasFile(false);
   }, [setHasFile]);
 
@@ -93,17 +145,23 @@ function DropZoneContainer() {
   const canStart = process === "compress" ? canCompress : canDecompress;
 
   const fileTableItems: FileTableItem[] = useMemo(() => {
-    if (!file) return [];
-    return [
-      {
+    return files.map((file) => {
+      const validation = validateFileSize(file);
+      const fileError = validation.valid ? null : (validation.message ?? null);
+      const uploadStatus = fileStatuses.get(fileKey(file));
+      const status: FileTableItem["status"] = fileError
+        ? "error"
+        : uploadStatus ?? "ready";
+
+      return {
         name: file.name,
         typeLabel: getFileTypeLabel(file),
         formattedSize: formatFileSize(file.size),
-        status: sizeError ? "error" as const : "ready" as const,
-        sizeError,
-      },
-    ];
-  }, [file, sizeError]);
+        status,
+        sizeError: fileError,
+      };
+    });
+  }, [files, fileStatuses]);
 
   return (
     <>
@@ -114,7 +172,7 @@ function DropZoneContainer() {
         onChange={handleAddMoreChange}
       />
       <UploadStageView
-        file={file}
+        file={firstFile}
         sizeError={sizeError}
         fileTableItems={fileTableItems}
         processType={process}

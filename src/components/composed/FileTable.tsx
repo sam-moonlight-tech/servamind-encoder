@@ -50,10 +50,15 @@ function FileTable({ files, className }: FileTableProps) {
               <td className="px-4 py-3 text-serva-gray-400">{item.typeLabel}</td>
               <td className="px-4 py-3 text-serva-gray-400">{item.formattedSize}</td>
               <td className="px-4 py-3">
-                {item.status === "error" ? (
+                {item.status === "error" && (
                   <span className="text-red-500 text-xs">{item.sizeError}</span>
-                ) : (
-                  <Badge>Ready</Badge>
+                )}
+                {item.status === "ready" && <Badge>Ready</Badge>}
+                {item.status === "uploading" && (
+                  <span className="text-serva-purple text-xs font-medium">Uploading...</span>
+                )}
+                {item.status === "complete" && (
+                  <span className="text-green-600 text-xs font-medium">Complete</span>
                 )}
               </td>
             </tr>

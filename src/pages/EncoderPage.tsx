@@ -51,16 +51,19 @@ function EncoderPage() {
   const { process, setProcess, hasFile } = useWorkflow();
   const { isAuthenticated, isLoading, signIn } = useAuth();
 
-  const handleEmailSubmit = useCallback(
-    (email: string) => {
-      signIn({ username: email, password: "" });
+  const handleGoogleCredential = useCallback(
+    (credential: string) => {
+      signIn({ googleToken: credential });
     },
     [signIn]
   );
 
-  const handleGoogleSignIn = useCallback(() => {
-    signIn();
-  }, [signIn]);
+  const handleEmailSubmit = useCallback(
+    (email: string) => {
+      signIn({ googleToken: email });
+    },
+    [signIn]
+  );
 
   const handleAppleSignIn = useCallback(() => {
     signIn();
@@ -72,7 +75,7 @@ function EncoderPage() {
         <OnboardingModal
           open={!isAuthenticated}
           onEmailSubmit={handleEmailSubmit}
-          onGoogleSignIn={handleGoogleSignIn}
+          onGoogleCredential={handleGoogleCredential}
           onAppleSignIn={handleAppleSignIn}
         />
       )}

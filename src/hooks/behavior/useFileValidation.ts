@@ -8,11 +8,10 @@ interface FileValidationResult {
 }
 
 export function useFileValidation(
-  file: File | undefined,
-  hash: string | undefined
+  file: File | undefined
 ): FileValidationResult {
   return useMemo(() => {
-    if (!file || !hash) {
+    if (!file) {
       return { canCompress: false, canDecompress: false, sizeError: null };
     }
 
@@ -31,5 +30,5 @@ export function useFileValidation(
       canDecompress: compressed,
       sizeError: null,
     };
-  }, [file, hash]);
+  }, [file]);
 }

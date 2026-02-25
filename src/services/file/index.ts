@@ -5,6 +5,6 @@ export {
   isCompressedFile,
   validateFileSize,
 } from "./validation";
-export { getDownloadLink } from "./download";
+export { getDownloadUrl } from "./download";
 export { getFileTypeLabel, formatFileSize } from "./format";
 export { generatePrivateKey } from "./keygen";

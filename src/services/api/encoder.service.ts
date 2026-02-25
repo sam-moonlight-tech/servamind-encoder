@@ -1,62 +1,55 @@
 import type {
-  FileReceipt,
-  ProcessingReceipts,
-  CompressionState,
-  CompressionStatus,
-  LoginPayload,
-  UploadFilePayload,
+  EncodeInitPayload,
+  EncodeInitResponse,
+  EncodeStreamResponse,
+  DecodeInitPayload,
+  DecodeInitResponse,
+  DecodeStreamResponse,
 } from "@/types/api.types";
 import type { HttpClient } from "./client";
 
 export interface EncoderService {
-  loginUser(payload: LoginPayload): Promise<ProcessingReceipts>;
-  uploadFile(payload: UploadFilePayload): Promise<FileReceipt>;
-  getCompressionState(receipt: FileReceipt): Promise<CompressionState>;
-  getCompressionStatus(receipt: FileReceipt): Promise<CompressionStatus>;
-  startCompression(): Promise<void>;
-  cancelCompression(): Promise<void>;
-  pauseCompression(): Promise<void>;
-  resumeCompression(): Promise<void>;
+  encodeInit(payload: EncodeInitPayload): Promise<EncodeInitResponse>;
+  encodeStream(fileRef: string, data: ArrayBuffer, token: string): Promise<EncodeStreamResponse>;
+  decodeInit(payload: DecodeInitPayload): Promise<DecodeInitResponse>;
+  decodeStream(data: ArrayBuffer, token: string): Promise<DecodeStreamResponse>;
+  download(fileId: string, filename?: string): Promise<Response>;
 }
 
-export function createEncoderService(client: HttpClient): EncoderService {
+export function createEncoderService(
+  authClient: HttpClient,
+  backendClient: HttpClient
+): EncoderService {
   return {
-    loginUser(payload) {
-      return client.post<ProcessingReceipts>("/loginUser", payload);
+    encodeInit(payload) {
+      return authClient.post<EncodeInitResponse>("/api/encode", payload);
     },
 
-    uploadFile(payload) {
-      const formData = new FormData();
-      formData.append("userID", payload.userID);
-      formData.append("file", payload.file);
-      formData.append("compress", String(payload.compress));
-      formData.append("checksum", payload.checksum);
-      formData.append("privateKey", payload.privateKey);
-      return client.post<FileReceipt>("/uploadFile", formData);
+    encodeStream(fileRef, data, token) {
+      return backendClient.postBinary<EncodeStreamResponse>(
+        `/api/stream/${fileRef}`,
+        data,
+        { "X-Streaming-Token": token }
+      );
     },
 
-    getCompressionState(receipt) {
-      return client.post<CompressionState>("/compressionState", receipt);
+    decodeInit(payload) {
+      return authClient.post<DecodeInitResponse>("/api/decode", payload);
     },
 
-    getCompressionStatus(receipt) {
-      return client.post<CompressionStatus>("/compressionStatus", receipt);
+    decodeStream(data, token) {
+      return backendClient.postBinary<DecodeStreamResponse>(
+        "/api/decode",
+        data,
+        { "X-Streaming-Token": token }
+      );
     },
 
-    startCompression() {
-      return client.post("/startCompression");
-    },
-
-    cancelCompression() {
-      return client.post("/cancelCompression");
-    },
-
-    pauseCompression() {
-      return client.post("/pauseCompression");
-    },
-
-    resumeCompression() {
-      return client.post("/resumeCompression");
+    download(fileId, filename) {
+      const path = filename
+        ? `/download/${fileId}?filename=${encodeURIComponent(filename)}`
+        : `/download/${fileId}`;
+      return backendClient.getBlob(path);
     },
   };
 }

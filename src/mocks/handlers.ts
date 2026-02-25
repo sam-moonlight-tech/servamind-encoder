@@ -1,49 +1,86 @@
 import { http, HttpResponse } from "msw";
 import { env } from "@/config/env";
 import {
-  mockProcessingReceipts,
-  mockFileReceipt,
-  mockCompressionState,
-  mockCompressionStatus,
-  mockSystemStats,
+  mockGoogleCallbackResponse,
+  mockCreateApiKeyResponse,
+  mockListApiKeysResponse,
+  mockEncodeInitResponse,
+  mockEncodeStreamResponse,
+  mockDecodeInitResponse,
+  mockQuotaResponse,
+  mockPublicStatsResponse,
+  mockExtensionsStatsResponse,
+  mockAuthHealthResponse,
+  mockBackendHealthResponse,
 } from "./fixtures";
 
-const baseUrl = env.apiBaseUrl;
+const authUrl = env.authApiUrl;
+const backendUrl = env.backendApiUrl;
 
 export const handlers = [
-  http.post(`${baseUrl}/loginUser`, () => {
-    return HttpResponse.json(mockProcessingReceipts);
+  // Auth
+  http.post(`${authUrl}/auth/google/callback`, () => {
+    return HttpResponse.json(mockGoogleCallbackResponse);
   }),
 
-  http.post(`${baseUrl}/uploadFile`, () => {
-    return HttpResponse.json(mockFileReceipt);
+  http.post(`${authUrl}/auth/logout`, () => {
+    return new HttpResponse(null, { status: 204 });
   }),
 
-  http.post(`${baseUrl}/compressionState`, () => {
-    return HttpResponse.json(mockCompressionState);
+  // API Keys
+  http.post(`${authUrl}/keys`, () => {
+    return HttpResponse.json(mockCreateApiKeyResponse);
   }),
 
-  http.post(`${baseUrl}/compressionStatus`, () => {
-    return HttpResponse.json(mockCompressionStatus);
+  http.get(`${authUrl}/keys`, () => {
+    return HttpResponse.json(mockListApiKeysResponse);
   }),
 
-  http.post(`${baseUrl}/startCompression`, () => {
-    return new HttpResponse(null, { status: 200 });
+  http.delete(`${authUrl}/keys/:keyId`, () => {
+    return new HttpResponse(null, { status: 204 });
   }),
 
-  http.post(`${baseUrl}/cancelCompression`, () => {
-    return new HttpResponse(null, { status: 200 });
+  // Encoding (init → auth, stream → backend)
+  http.post(`${authUrl}/api/encode`, () => {
+    return HttpResponse.json(mockEncodeInitResponse);
   }),
 
-  http.post(`${baseUrl}/pauseCompression`, () => {
-    return new HttpResponse(null, { status: 200 });
+  http.post(`${backendUrl}/api/stream/:fileRef`, () => {
+    return HttpResponse.json(mockEncodeStreamResponse);
   }),
 
-  http.post(`${baseUrl}/resumeCompression`, () => {
-    return new HttpResponse(null, { status: 200 });
+  // Decoding (init → auth, stream → backend)
+  http.post(`${authUrl}/api/decode`, () => {
+    return HttpResponse.json(mockDecodeInitResponse);
   }),
 
-  http.post(`${baseUrl}/systemStats`, () => {
-    return HttpResponse.json(mockSystemStats);
+  // Download
+  http.get(`${backendUrl}/download/:fileId`, () => {
+    return new HttpResponse(new Uint8Array([0x00, 0x01, 0x02]), {
+      headers: { "Content-Type": "application/octet-stream" },
+    });
+  }),
+
+  // Quota
+  http.get(`${authUrl}/quota`, () => {
+    return HttpResponse.json(mockQuotaResponse);
+  }),
+
+  // Stats
+  http.get(`${backendUrl}/api/stats/public`, () => {
+    return HttpResponse.json(mockPublicStatsResponse);
+  }),
+
+  http.get(`${backendUrl}/api/stats/extensions`, () => {
+    return HttpResponse.json(mockExtensionsStatsResponse);
+  }),
+
+  // Health
+  http.get(`${authUrl}/health`, () => {
+    return HttpResponse.json(mockAuthHealthResponse);
+  }),
+
+  http.get(`${backendUrl}/health`, () => {
+    return HttpResponse.json(mockBackendHealthResponse);
   }),
 ];

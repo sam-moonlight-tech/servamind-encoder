@@ -2,10 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "./keys";
 import { statsService } from "@/services/api";
 
-export function useSystemStats() {
+export function useExtensionStats() {
   return useQuery({
-    queryKey: queryKeys.systemStats,
-    queryFn: () => statsService.getSystemStats(),
-    retry: 1,
+    queryKey: queryKeys.extensionStats,
+    queryFn: () => statsService.getExtensionStats(),
   });
 }

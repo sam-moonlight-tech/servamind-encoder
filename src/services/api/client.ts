@@ -21,13 +21,17 @@ export function createHttpClient(config: HttpClientConfig) {
     });
 
     if (!response.ok) {
-      let body: { message?: string; code?: number } | undefined;
+      let body: { detail?: string } | undefined;
       try {
         body = await response.json();
       } catch {
         // Response body not JSON
       }
       throw ApiError.fromResponse(response, body);
+    }
+
+    if (response.status === 204) {
+      return undefined as T;
     }
 
     const contentType = response.headers.get("content-type");
@@ -51,7 +55,47 @@ export function createHttpClient(config: HttpClientConfig) {
     });
   }
 
-  return { get, post, request };
+  function postBinary<T>(
+    path: string,
+    body: ArrayBuffer,
+    headers?: Record<string, string>
+  ): Promise<T> {
+    return request<T>(path, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/octet-stream",
+        ...headers,
+      },
+      body,
+    });
+  }
+
+  async function getBlob(path: string): Promise<Response> {
+    const authHeaders = config.getAuthHeaders?.() ?? {};
+
+    const response = await fetch(`${config.baseUrl}${path}`, {
+      method: "GET",
+      headers: { ...authHeaders },
+    });
+
+    if (!response.ok) {
+      let body: { detail?: string } | undefined;
+      try {
+        body = await response.json();
+      } catch {
+        // Response body not JSON
+      }
+      throw ApiError.fromResponse(response, body);
+    }
+
+    return response;
+  }
+
+  function del<T>(path: string): Promise<T> {
+    return request<T>(path, { method: "DELETE" });
+  }
+
+  return { get, post, postBinary, getBlob, del, request };
 }
 
 export type HttpClient = ReturnType<typeof createHttpClient>;

@@ -8,7 +8,7 @@ import type { WorkflowStage } from "@/types/domain.types";
 
 const stageComponents: Record<WorkflowStage, React.ComponentType> = {
   upload: DropZoneContainer,
-  processing: ProcessingContainer,
+  encoding: ProcessingContainer,
   download: DownloadContainer,
   error: ErrorContainer,
 };

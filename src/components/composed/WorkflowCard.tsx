@@ -19,7 +19,7 @@ function WorkflowCard({ stage, children, className }: WorkflowCardProps) {
 
   return (
     <Card
-      variant={stage === "processing" ? "holographic" : "default"}
+      variant={stage === "encoding" ? "holographic" : "default"}
       className={cn("animate-fade-in", className)}
     >
       {children}

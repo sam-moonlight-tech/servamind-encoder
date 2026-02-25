@@ -1,14 +1,31 @@
-import type { SystemStats } from "@/types/api.types";
+import type {
+  PublicStatsResponse,
+  ExtensionsStatsResponse,
+  QuotaResponse,
+} from "@/types/api.types";
 import type { HttpClient } from "./client";
 
 export interface StatsService {
-  getSystemStats(): Promise<SystemStats>;
+  getPublicStats(): Promise<PublicStatsResponse>;
+  getExtensionStats(): Promise<ExtensionsStatsResponse>;
+  getQuota(): Promise<QuotaResponse>;
 }
 
-export function createStatsService(client: HttpClient): StatsService {
+export function createStatsService(
+  authClient: HttpClient,
+  backendClient: HttpClient
+): StatsService {
   return {
-    getSystemStats() {
-      return client.post<SystemStats>("/systemStats");
+    getPublicStats() {
+      return backendClient.get<PublicStatsResponse>("/api/stats/public");
+    },
+
+    getExtensionStats() {
+      return backendClient.get<ExtensionsStatsResponse>("/api/stats/extensions");
+    },
+
+    getQuota() {
+      return authClient.get<QuotaResponse>("/quota");
     },
   };
 }

@@ -1,19 +1,39 @@
-export type WorkflowStage = "upload" | "processing" | "download" | "error";
+export type WorkflowStage = "upload" | "encoding" | "download" | "error";
 
 export type ProcessType = "compress" | "decompress";
 
 export interface AuthUser {
   id: string;
   email: string;
-  username: string;
+  googleId: string;
+  planType: string;
+  subscriptionStatus: string;
+  betaTierActive: boolean;
+  betaEnrolledAt: string;
+  createdAt: string;
+}
+
+export interface ApiKeyInfo {
+  keyId: string;
+  apiKey: string;
+  keyPrefix: string;
+  createdAt: string;
 }
 
 export interface FileTableItem {
   name: string;
   typeLabel: string;
   formattedSize: string;
-  status: "ready" | "error";
+  status: "ready" | "uploading" | "complete" | "error";
   sizeError: string | null;
+}
+
+export interface FileResult {
+  fileName: string;
+  originalSize: number;
+  encodedSize: number | null;
+  fileId: string;
+  downloadUrl: string;
 }
 
 export interface FeatureFlags {
