@@ -29,3 +29,13 @@ export {
   type OnboardingModalProps,
 } from "./OnboardingModal";
 export { ServamindLogo } from "./ServamindLogo";
+export {
+  ComparisonDiagram,
+  type ComparisonDiagramProps,
+} from "./ComparisonDiagram";
+export {
+  Sidebar,
+  DATA_SECTIONS,
+  SETTINGS_SECTIONS,
+  type SidebarProps,
+} from "./Sidebar";

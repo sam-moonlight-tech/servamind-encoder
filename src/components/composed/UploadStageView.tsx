@@ -1,5 +1,6 @@
 import { ProgressBar } from "@/components/ui";
 import { DropZone } from "./DropZone";
+import { ComparisonDiagram } from "./ComparisonDiagram";
 import { FileTable } from "./FileTable";
 import { FileTableActionBar } from "./FileTableActionBar";
 import { cn } from "@/lib/utils";
@@ -13,10 +14,11 @@ interface UploadStageViewProps {
   canStart: boolean;
   uploading: boolean;
   isDragging: boolean;
-  onFileSelect: (file: File) => void;
+  onFileSelect: (files: File[]) => void;
   onClear: () => void;
   onAddMore: () => void;
   onStart: () => void;
+  onRemove: (index: number) => void;
   onDragEnter: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent) => void;
@@ -36,6 +38,7 @@ function UploadStageView({
   onClear,
   onAddMore,
   onStart,
+  onRemove,
   onDragEnter,
   onDragLeave,
   onDragOver,
@@ -61,16 +64,19 @@ function UploadStageView({
 
   if (file) {
     return (
-      <div className={cn("space-y-4", className)}>
+      <div className={cn("space-y-0", className)}>
         <FileTableActionBar
           fileCount={fileTableItems.length}
           processType={processType}
           canStart={canStart}
-          onClear={onClear}
+          onBack={onClear}
           onAddMore={onAddMore}
           onStart={onStart}
+          className="py-6 px-6"
         />
-        <FileTable files={fileTableItems} />
+        <div className="px-6 pb-6">
+          <FileTable files={fileTableItems} onRemove={onRemove} />
+        </div>
       </div>
     );
   }
@@ -81,12 +87,14 @@ function UploadStageView({
         isDragging={isDragging}
         file={file}
         sizeError={sizeError}
+        processType={processType}
         onFileSelect={onFileSelect}
         onDragEnter={onDragEnter}
         onDragLeave={onDragLeave}
         onDragOver={onDragOver}
         onDrop={onDrop}
       />
+      {processType === "compress" && <ComparisonDiagram />}
     </div>
   );
 }

@@ -3,10 +3,12 @@
 @theme {
   /* Colors - Brand */
   --color-serva-purple: #630066;
+  --color-core-purple: #630066;
   --color-serva-green: #51a500;
 
   /* Colors - Gray Scale */
   --color-serva-gray-100: #c8c3c8;
+  --color-serva-gray-200: #a59ca6;
   --color-serva-gray-300: #837784;
   --color-serva-gray-400: #614f62;
   --color-serva-gray-600: #1c011e;

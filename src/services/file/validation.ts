@@ -1,9 +1,14 @@
-import { MAX_FILE_SIZE, COMPRESSED_FILE_TYPE } from "@/config/constants";
+import {
+  MAX_FILE_SIZE,
+  COMPRESSED_FILE_TYPE,
+  ALLOWED_ENCODE_EXTENSIONS,
+} from "@/config/constants";
+import type { ProcessType } from "@/types/domain.types";
 
 export function getFileExtension(file: File): string {
   const dotIndex = file.name.lastIndexOf(".");
   if (dotIndex === -1) return "";
-  return file.name.slice(dotIndex + 1);
+  return file.name.slice(dotIndex + 1).toLowerCase();
 }
 
 export function getFileName(name: string): string {
@@ -23,5 +28,30 @@ export function validateFileSize(file: File): { valid: boolean; message?: string
       message: `File size exceeds maximum of ${MAX_FILE_SIZE / (1024 ** 3)}GB`,
     };
   }
+  return { valid: true };
+}
+
+export function validateFileType(
+  file: File,
+  process: ProcessType
+): { valid: boolean; message?: string } {
+  const ext = getFileExtension(file);
+
+  if (process === "compress") {
+    if (ext === COMPRESSED_FILE_TYPE) {
+      return { valid: false, message: ".serva files cannot be encoded" };
+    }
+    if (!ALLOWED_ENCODE_EXTENSIONS.includes(ext as (typeof ALLOWED_ENCODE_EXTENSIONS)[number])) {
+      return {
+        valid: false,
+        message: `Unsupported file type (.${ext})`,
+      };
+    }
+  }
+
+  if (process === "decompress" && ext !== COMPRESSED_FILE_TYPE) {
+    return { valid: false, message: "Only .serva files can be decoded" };
+  }
+
   return { valid: true };
 }

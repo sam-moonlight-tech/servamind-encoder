@@ -6,43 +6,82 @@ interface FileTableActionBarProps {
   fileCount: number;
   processType: ProcessType;
   canStart: boolean;
-  onClear: () => void;
+  onBack: () => void;
   onAddMore: () => void;
   onStart: () => void;
   className?: string;
+}
+
+function BackArrowIcon() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-serva-gray-600 shrink-0"
+    >
+      <path d="M15 6l-6 6 6 6" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0"
+    >
+      <path d="M4 8h8M8 4v8" />
+    </svg>
+  );
 }
 
 function FileTableActionBar({
   fileCount,
   processType,
   canStart,
-  onClear,
+  onBack,
   onAddMore,
   onStart,
   className,
 }: FileTableActionBarProps) {
   const verb = processType === "compress" ? "encode" : "decode";
-  const startLabel = processType === "compress" ? "Start Encoding" : "Start Decoding";
+  const startLabel =
+    processType === "compress" ? "Start encoding" : "Start decoding";
 
   return (
     <div className={cn("flex items-center justify-between", className)}>
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-serva-gray-600">
-          {fileCount} {fileCount === 1 ? "file" : "files"} ready to {verb}
-        </span>
+      <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={onClear}
-          className="text-sm text-serva-gray-400 hover:text-serva-gray-600 underline cursor-pointer"
+          onClick={onBack}
+          className="cursor-pointer hover:opacity-70"
         >
-          Clear
+          <BackArrowIcon />
         </button>
+        <h1 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] whitespace-nowrap">
+          {fileCount} {fileCount === 1 ? "file" : "files"} ready to {verb}
+        </h1>
       </div>
-      <div className="flex items-center gap-2">
-        <Button variant="secondary" size="sm" onClick={onAddMore}>
-          Add More Files
+
+      <div className="flex items-center gap-4">
+        <Button variant="secondary" size="md" onClick={onAddMore}>
+          Add more files
+          <PlusIcon />
         </Button>
-        <Button size="sm" onClick={onStart} disabled={!canStart}>
+        <Button size="md" onClick={onStart} disabled={!canStart}>
           {startLabel}
         </Button>
       </div>

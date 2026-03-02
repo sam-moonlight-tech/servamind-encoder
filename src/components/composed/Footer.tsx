@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import { EXTERNAL_LINKS } from "@/config/constants";
 
 interface FooterProps {
   className?: string;
@@ -9,37 +8,19 @@ function Footer({ className }: FooterProps) {
   return (
     <footer
       className={cn(
-        "flex flex-col items-center gap-2 py-6 text-sm text-serva-gray-400",
+        "h-[85px] w-full overflow-hidden relative shrink-0",
         className
       )}
     >
-      <div className="flex items-center gap-3">
-        <a
-          href={EXTERNAL_LINKS.TERMS}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-serva-purple transition-colors"
-        >
-          Terms of Use
-        </a>
-        <span>|</span>
-        <a
-          href={EXTERNAL_LINKS.PRIVACY}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-serva-purple transition-colors"
-        >
-          Privacy Policy
-        </a>
-      </div>
-      <a
-        href={EXTERNAL_LINKS.COMPANY}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="hover:text-serva-purple transition-colors"
-      >
-        Servamind, Inc.
-      </a>
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, transparent 0%, rgba(194,234,83,0.08) 20%, rgba(189,255,227,0.12) 40%, rgba(169,183,252,0.10) 60%, rgba(252,202,236,0.08) 80%, transparent 100%)",
+          maskImage: "linear-gradient(to top, black 0%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to top, black 0%, transparent 100%)",
+        }}
+      />
     </footer>
   );
 }

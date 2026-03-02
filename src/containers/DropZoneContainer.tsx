@@ -26,12 +26,14 @@ function DropZoneContainer() {
     return `${file.name}:${file.size}`;
   }
 
-  const handleFileSelect = useCallback((selectedFile: File) => {
+  const handleFileSelect = useCallback((selectedFiles: File[]) => {
     setFiles((prev) => {
-      const key = `${selectedFile.name}:${selectedFile.size}`;
-      const alreadyAdded = prev.some((f) => `${f.name}:${f.size}` === key);
-      if (alreadyAdded) return prev;
-      return [...prev, selectedFile];
+      const existingKeys = new Set(prev.map((f) => `${f.name}:${f.size}`));
+      const newFiles = selectedFiles.filter(
+        (f) => !existingKeys.has(`${f.name}:${f.size}`)
+      );
+      if (newFiles.length === 0) return prev;
+      return [...prev, ...newFiles];
     });
     setHasFile(true);
   }, [setHasFile]);
@@ -61,12 +63,14 @@ function DropZoneContainer() {
         if (compress) {
           for (const file of files) {
             setStatus(file, "uploading");
+            const start = performance.now();
             const result = await encodeAsync({
               file,
               fileReference: crypto.randomUUID(),
               idempotencyKey: crypto.randomUUID(),
               userPassword: privateKey,
             });
+            const durationMs = performance.now() - start;
             setStatus(file, "complete");
             addFileResult({
               fileName: file.name,
@@ -74,6 +78,7 @@ function DropZoneContainer() {
               encodedSize: result.encodedSize,
               fileId: result.init.file_id,
               downloadUrl: result.init.download_url,
+              durationMs,
             });
           }
           setProcess("compress");
@@ -92,6 +97,7 @@ function DropZoneContainer() {
               encodedSize: null,
               fileId: "",
               downloadUrl: "",
+              durationMs: null,
             });
           }
           setProcess("decompress");
@@ -115,15 +121,26 @@ function DropZoneContainer() {
     setHasFile(false);
   }, [setHasFile]);
 
+  const handleRemove = useCallback((index: number) => {
+    setFiles((prev) => {
+      const next = [...prev];
+      next.splice(index, 1);
+      if (next.length === 0) {
+        setHasFile(false);
+      }
+      return next;
+    });
+  }, [setHasFile]);
+
   const handleAddMore = useCallback(() => {
     addMoreInputRef.current?.click();
   }, []);
 
   const handleAddMoreChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const selectedFile = e.target.files?.[0];
-      if (selectedFile) {
-        handleFileSelect(selectedFile);
+      const selected = e.target.files;
+      if (selected && selected.length > 0) {
+        handleFileSelect(Array.from(selected));
       }
       e.target.value = "";
     },
@@ -168,6 +185,7 @@ function DropZoneContainer() {
       <input
         ref={addMoreInputRef}
         type="file"
+        multiple
         className="hidden"
         onChange={handleAddMoreChange}
       />
@@ -183,6 +201,7 @@ function DropZoneContainer() {
         onClear={handleClear}
         onAddMore={handleAddMore}
         onStart={handleStart}
+        onRemove={handleRemove}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -190,6 +209,7 @@ function DropZoneContainer() {
       />
       <PrivateKeyModal
         open={showKeyModal}
+        mode={process === "decompress" ? "decrypt" : "encrypt"}
         onClose={() => setShowKeyModal(false)}
         onConfirm={handleKeyConfirm}
       />

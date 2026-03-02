@@ -9,7 +9,7 @@ interface UseDropZoneReturn {
 }
 
 export function useDropZone(
-  onFileDrop: (file: File) => void
+  onFileDrop: (files: File[]) => void
 ): UseDropZoneReturn {
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
@@ -46,9 +46,9 @@ export function useDropZone(
       setIsDragging(false);
       dragCounter.current = 0;
 
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        onFileDrop(files[0]);
+      const dropped = e.dataTransfer.files;
+      if (dropped.length > 0) {
+        onFileDrop(Array.from(dropped));
       }
     },
     [onFileDrop]

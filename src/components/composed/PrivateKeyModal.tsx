@@ -1,9 +1,11 @@
 import { useState, useCallback } from "react";
 import { Dialog, Button } from "@/components/ui";
 import { generatePrivateKey } from "@/services/file";
+import { cn } from "@/lib/utils";
 
 interface PrivateKeyModalProps {
   open: boolean;
+  mode?: "encrypt" | "decrypt";
   onClose: () => void;
   onConfirm: (key: string) => void;
 }
@@ -31,8 +33,9 @@ function LockIcon() {
 const MIN_LENGTH = 3;
 const MAX_LENGTH = 64;
 
-function PrivateKeyModal({ open, onClose, onConfirm }: PrivateKeyModalProps) {
+function PrivateKeyModal({ open, mode = "encrypt", onClose, onConfirm }: PrivateKeyModalProps) {
   const [key, setKey] = useState("");
+  const isDecrypting = mode === "decrypt";
 
   const isValid = key.length >= MIN_LENGTH && key.length <= MAX_LENGTH;
 
@@ -65,11 +68,12 @@ function PrivateKeyModal({ open, onClose, onConfirm }: PrivateKeyModalProps) {
           </div>
           <div>
             <h2 className="text-md font-bold text-serva-gray-900">
-              Choose a Private Key
+              {isDecrypting ? "Enter Your Private Key" : "Choose a Private Key"}
             </h2>
             <p className="mt-1 text-sm text-[#614F62] leading-snug tracking-tight">
-              This key will encrypt your .serva files. Keep it safe—you'll need
-              it to decrypt them later.
+              {isDecrypting
+                ? "Enter the private key you used to encrypt these .serva files to decrypt them."
+                : "This key will encrypt your .serva files. Keep it safe\u2014you\u2019ll need it to decrypt them later."}
             </p>
           </div>
         </div>
@@ -84,15 +88,20 @@ function PrivateKeyModal({ open, onClose, onConfirm }: PrivateKeyModalProps) {
               value={key}
               onChange={(e) => setKey(e.target.value.slice(0, MAX_LENGTH))}
               placeholder="Enter your private key..."
-              className="w-full rounded-[7px] border border-[#EAEAEA] px-4 py-3 pr-24 text-sm text-serva-gray-900 placeholder:text-serva-gray-400 focus:border-2 focus:border-serva-purple focus:outline-none"
+              className={cn(
+                "w-full rounded-[7px] border border-[#EAEAEA] px-4 py-3 text-sm text-serva-gray-900 placeholder:text-serva-gray-400 focus:border-2 focus:border-serva-purple focus:outline-none",
+                !isDecrypting && "pr-24"
+              )}
             />
-            <button
-              type="button"
-              onClick={isValid ? handleCopy : handleGenerate}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-[7px] bg-[#F5F5F5] px-3 py-1.5 text-sm font-medium text-serva-gray-900 hover:bg-[#EAEAEA] transition-colors cursor-pointer"
-            >
-              {isValid ? "Copy" : "Generate"}
-            </button>
+            {!isDecrypting && (
+              <button
+                type="button"
+                onClick={isValid ? handleCopy : handleGenerate}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-[7px] bg-[#F5F5F5] px-3 py-1.5 text-sm font-medium text-serva-gray-900 hover:bg-[#EAEAEA] transition-colors cursor-pointer"
+              >
+                {isValid ? "Copy" : "Generate"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -111,7 +120,7 @@ function PrivateKeyModal({ open, onClose, onConfirm }: PrivateKeyModalProps) {
             disabled={!isValid}
             onClick={handleConfirm}
           >
-            Set Private Key
+            {isDecrypting ? "Confirm Key" : "Set Private Key"}
           </Button>
         </div>
       </div>

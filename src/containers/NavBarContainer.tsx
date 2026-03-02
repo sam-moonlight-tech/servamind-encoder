@@ -14,6 +14,7 @@ function NavBarContainer() {
       onSignOut={signOut}
       onNavigateDashboard={() => navigate("/")}
       onNavigateSettings={() => navigate("/settings")}
+      onNavigateProfile={() => navigate("/settings")}
     />
   );
 }

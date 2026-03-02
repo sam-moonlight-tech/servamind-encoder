@@ -61,10 +61,10 @@ export const mockDecodeStreamResponse: DecodeStreamResponse = {
 
 export const mockQuotaResponse: QuotaResponse = {
   plan_type: "beta",
-  total_bytes_this_month: 1_073_741_824,
-  quota_bytes: 5_368_709_120,
-  quota_remaining_bytes: 4_294_967_296,
-  percentage_used: 20,
+  total_bytes_this_month: 53_687_091_200,
+  quota_bytes: 1_073_741_824_000,
+  quota_remaining_bytes: 1_020_054_732_800,
+  percentage_used: 5,
 };
 
 export const mockPublicStatsResponse: PublicStatsResponse = {

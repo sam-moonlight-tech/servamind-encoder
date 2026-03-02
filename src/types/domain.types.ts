@@ -24,8 +24,12 @@ export interface FileTableItem {
   name: string;
   typeLabel: string;
   formattedSize: string;
-  status: "ready" | "uploading" | "complete" | "error";
+  status: "ready" | "uploading" | "encoding" | "encoded" | "complete" | "error";
   sizeError: string | null;
+  encodingProgress?: number;
+  encodedSize?: string;
+  reductionPercent?: number;
+  durationSeconds?: number;
 }
 
 export interface FileResult {
@@ -34,6 +38,7 @@ export interface FileResult {
   encodedSize: number | null;
   fileId: string;
   downloadUrl: string;
+  durationMs: number | null;
 }
 
 export interface FeatureFlags {

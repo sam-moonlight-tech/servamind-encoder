@@ -12,6 +12,7 @@ interface NavBarProps {
   onSignOut: () => void;
   onNavigateDashboard?: () => void;
   onNavigateSettings?: () => void;
+  onNavigateProfile?: () => void;
   className?: string;
 }
 
@@ -40,12 +41,14 @@ function ProfilePopover({
   quota,
   anchorRect,
   onSignOut,
+  onNavigateProfile,
   onClose,
 }: {
   user: AuthUser;
   quota: QuotaResponse | null;
   anchorRect: DOMRect;
   onSignOut: () => void;
+  onNavigateProfile?: () => void;
   onClose: () => void;
 }) {
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -65,13 +68,6 @@ function ProfilePopover({
   const totalBytes = quota?.quota_bytes ?? 0;
   const percentUsed = quota?.percentage_used ?? 0;
 
-  const planType = quota?.plan_type ?? "";
-  const planLabel = planType.toLowerCase().includes("beta")
-    ? "Free Beta"
-    : planType
-      ? planType.charAt(0).toUpperCase() + planType.slice(1)
-      : "Free";
-
   const now = new Date();
   const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const resetFormatted = resetDate.toLocaleDateString("en-US", {
@@ -86,12 +82,12 @@ function ProfilePopover({
   return createPortal(
     <div
       ref={popoverRef}
-      className="fixed z-50 w-[340px] bg-white rounded-2xl shadow-xl border border-[#E5E5E5] animate-fade-in"
+      className="fixed z-50 w-[340px] bg-white rounded-2xl shadow-xl border border-light-200 animate-fade-in"
       style={{ top, right }}
     >
       {/* Profile header */}
       <div className="flex flex-col items-center pt-10 pb-7 px-8">
-        <div className="flex items-center justify-center size-[72px] rounded-2xl bg-[#EBEBEB] mb-5">
+        <div className="flex items-center justify-center size-[72px] rounded-2xl bg-light-200 mb-5">
           <span className="text-[28px] font-semibold text-serva-gray-600">
             {initial}
           </span>
@@ -103,23 +99,15 @@ function ProfilePopover({
       </div>
 
       {/* Quota section */}
-      <div className="border-t border-[#E5E5E5] px-8 py-6">
+      <div className="border-t border-light-200 px-8 py-6">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5">
             <span className="text-[15px] font-bold text-serva-gray-600">
-              {planLabel}
+              Monthly Usage
             </span>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              className="text-serva-gray-300"
-            >
-              <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.2" />
-              <path d="M8 7.2V11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-              <circle cx="8" cy="5.2" r="0.7" fill="currentColor" />
-            </svg>
+            <span className="text-[10px] font-semibold text-serva-gray-300 bg-light-200 rounded px-1.5 py-0.5 uppercase tracking-wider">
+              Beta
+            </span>
           </div>
           <span className="text-[15px] text-serva-gray-400">
             Used{" "}
@@ -130,7 +118,7 @@ function ProfilePopover({
             {formatFileSize(totalBytes)}
           </span>
         </div>
-        <div className="w-full h-1.5 bg-[#E5E5E5] rounded-full overflow-hidden mb-3">
+        <div className="w-full h-1.5 bg-light-200 rounded-full overflow-hidden mb-3">
           <div
             className="h-full bg-serva-purple rounded-full transition-all"
             style={{ width: `${Math.max(Math.min(percentUsed, 100), 2)}%` }}
@@ -142,24 +130,27 @@ function ProfilePopover({
       </div>
 
       {/* Links */}
-      <div className="border-t border-[#E5E5E5]">
-        <a
-          href="#"
-          className="flex items-center justify-between px-8 py-5 text-[15px] font-medium text-serva-gray-600 hover:bg-[#FAFAFA] transition-colors"
+      <div className="border-t border-light-200">
+        <button
+          type="button"
+          onClick={() => {
+            onNavigateProfile?.();
+            onClose();
+          }}
+          className="w-full text-left px-8 py-5 text-[15px] font-medium text-serva-gray-600 hover:bg-light-300 transition-colors cursor-pointer"
         >
-          Pricing
-          <ExternalLinkIcon />
-        </a>
+          Profile
+        </button>
       </div>
 
-      <div className="border-t border-[#E5E5E5]">
+      <div className="border-t border-light-200">
         <button
           type="button"
           onClick={() => {
             onSignOut();
             onClose();
           }}
-          className="w-full text-left px-8 py-5 text-[15px] font-medium text-serva-gray-600 hover:bg-[#FAFAFA] transition-colors cursor-pointer rounded-b-2xl"
+          className="w-full text-left px-8 py-5 text-[15px] font-medium text-serva-gray-600 hover:bg-light-300 transition-colors cursor-pointer rounded-b-2xl"
         >
           Sign out
         </button>
@@ -169,7 +160,7 @@ function ProfilePopover({
   );
 }
 
-function NavBar({ user, quota, onSignOut, onNavigateDashboard, onNavigateSettings, className }: NavBarProps) {
+function NavBar({ user, quota, onSignOut, onNavigateDashboard, onNavigateSettings, onNavigateProfile, className }: NavBarProps) {
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const avatarRef = useRef<HTMLButtonElement>(null);
 
@@ -191,10 +182,12 @@ function NavBar({ user, quota, onSignOut, onNavigateDashboard, onNavigateSetting
     ? formatFileSize(quota.quota_bytes)
     : "—";
 
+  const initial = user?.email?.[0]?.toUpperCase() ?? "U";
+
   return (
     <nav
       className={cn(
-        "flex items-center justify-between px-6 py-3 bg-light-300",
+        "flex items-center justify-between px-6 h-[54px] bg-light-300",
         className
       )}
     >
@@ -209,14 +202,14 @@ function NavBar({ user, quota, onSignOut, onNavigateDashboard, onNavigateSetting
           >
             Dashboard
           </button>
-          <span className="font-medium text-serva-gray-600 cursor-pointer">
+          <span className="text-serva-gray-400 cursor-pointer">
             Get Started
           </span>
           <a
             href="https://www.servamind.com/data"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 font-medium text-serva-gray-600"
+            className="flex items-center gap-1 text-serva-gray-400"
           >
             Why .serva
             <ExternalLinkIcon />
@@ -245,8 +238,8 @@ function NavBar({ user, quota, onSignOut, onNavigateDashboard, onNavigateSetting
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-light-200 rounded px-2 h-[30px] text-sm">
-            <span className="font-medium text-serva-gray-400">Used</span>
+          <div className="flex items-center gap-1 bg-light-200 rounded-[4px] px-2 h-[30px] text-sm">
+            <span className="text-serva-gray-400">Used</span>
             <span className="font-medium text-serva-gray-600">{usedDisplay}</span>
             <span className="text-serva-gray-400">/</span>
             <span className="text-serva-gray-400">{totalDisplay}</span>
@@ -254,11 +247,11 @@ function NavBar({ user, quota, onSignOut, onNavigateDashboard, onNavigateSetting
           <button
             ref={avatarRef}
             onClick={handleToggle}
-            className="flex items-center justify-center size-8 rounded-full bg-serva-purple/40 cursor-pointer"
+            className="flex items-center justify-center size-8 rounded-full bg-serva-gray-100 cursor-pointer"
             aria-label="User menu"
           >
             <span className="text-sm font-medium text-serva-gray-600">
-              {user?.email?.[0]?.toUpperCase() ?? "U"}
+              {initial}
             </span>
           </button>
         </div>
@@ -270,6 +263,7 @@ function NavBar({ user, quota, onSignOut, onNavigateDashboard, onNavigateSetting
           quota={quota}
           anchorRect={anchorRect}
           onSignOut={onSignOut}
+          onNavigateProfile={onNavigateProfile}
           onClose={handleClose}
         />
       )}
