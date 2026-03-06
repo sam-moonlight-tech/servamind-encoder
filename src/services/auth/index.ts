@@ -1,7 +1,12 @@
 import type { AuthProvider } from "./auth.provider";
+import { env } from "@/config/env";
 import { createGoogleAuthProvider } from "./adapters/google.adapter";
+import { createMockAuthProvider } from "./adapters/mock.adapter";
 
 export function createAuthProvider(): AuthProvider {
+  if (env.authProvider === "mock") {
+    return createMockAuthProvider();
+  }
   return createGoogleAuthProvider();
 }
 

@@ -16,36 +16,14 @@ interface NavBarProps {
   className?: string;
 }
 
-function ExternalLinkIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-serva-gray-400"
-    >
-      <path d="M12 8.667v4A1.333 1.333 0 0110.667 14H3.333A1.333 1.333 0 012 12.667V5.333A1.333 1.333 0 013.333 4h4" />
-      <path d="M10 2h4v4" />
-      <path d="M6.667 9.333L14 2" />
-    </svg>
-  );
-}
-
 function ProfilePopover({
   user,
-  quota,
   anchorRect,
   onSignOut,
   onNavigateProfile,
   onClose,
 }: {
   user: AuthUser;
-  quota: QuotaResponse | null;
   anchorRect: DOMRect;
   onSignOut: () => void;
   onNavigateProfile?: () => void;
@@ -63,94 +41,60 @@ function ProfilePopover({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [onClose]);
 
-  const initial = user.email?.[0]?.toUpperCase() ?? "U";
-  const usedBytes = quota?.total_bytes_this_month ?? 0;
-  const totalBytes = quota?.quota_bytes ?? 0;
-  const percentUsed = quota?.percentage_used ?? 0;
-
-  const now = new Date();
-  const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const resetFormatted = resetDate.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-
   const top = anchorRect.bottom + 8;
   const right = window.innerWidth - anchorRect.right;
 
   return createPortal(
     <div
       ref={popoverRef}
-      className="fixed z-50 w-[340px] bg-white rounded-2xl shadow-xl border border-light-200 animate-fade-in"
+      className="fixed z-50 w-[188px] bg-white rounded-lg shadow-[0px_0px_1px_0px_rgba(0,0,0,0.06),0px_4px_24px_0px_rgba(0,0,0,0.12)] animate-fade-in"
       style={{ top, right }}
     >
       {/* Profile header */}
-      <div className="flex flex-col items-center pt-10 pb-7 px-8">
-        <div className="flex items-center justify-center size-[72px] rounded-2xl bg-light-200 mb-5">
-          <span className="text-[28px] font-semibold text-serva-gray-600">
-            {initial}
-          </span>
-        </div>
-        <p className="text-lg font-bold text-serva-gray-600">
+      <div className="flex flex-col gap-1.5 px-5 py-5">
+        <p className="text-sm font-semibold text-serva-gray-600">
           {user.email.split("@")[0]}
         </p>
-        <p className="text-sm text-serva-gray-400 mt-0.5">{user.email}</p>
+        <p className="text-xs text-serva-gray-400">{user.email}</p>
       </div>
 
-      {/* Quota section */}
-      <div className="border-t border-light-200 px-8 py-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[15px] font-bold text-serva-gray-600">
-              Monthly Usage
-            </span>
-            <span className="text-[10px] font-semibold text-serva-gray-300 bg-light-200 rounded px-1.5 py-0.5 uppercase tracking-wider">
-              Beta
-            </span>
-          </div>
-          <span className="text-[15px] text-serva-gray-400">
-            Used{" "}
-            <span className="font-bold text-serva-gray-600">
-              {formatFileSize(usedBytes)}
-            </span>
-            {" / "}
-            {formatFileSize(totalBytes)}
-          </span>
-        </div>
-        <div className="w-full h-1.5 bg-light-200 rounded-full overflow-hidden mb-3">
-          <div
-            className="h-full bg-serva-purple rounded-full transition-all"
-            style={{ width: `${Math.max(Math.min(percentUsed, 100), 2)}%` }}
-          />
-        </div>
-        <p className="text-[13px] text-serva-gray-300">
-          Your free TB resets on {resetFormatted}.
-        </p>
-      </div>
+      <div className="h-px bg-light-200" />
 
-      {/* Links */}
-      <div className="border-t border-light-200">
+      {/* Menu items */}
+      <div className="flex flex-col gap-1 py-4 px-2">
         <button
           type="button"
           onClick={() => {
             onNavigateProfile?.();
             onClose();
           }}
-          className="w-full text-left px-8 py-5 text-[15px] font-medium text-serva-gray-600 hover:bg-light-300 transition-colors cursor-pointer"
+          className="w-full text-left px-4 h-8 flex items-center text-sm font-medium text-serva-gray-600 hover:bg-light-200/50 transition-colors cursor-pointer rounded"
         >
-          Profile
+          Your profile
         </button>
-      </div>
-
-      <div className="border-t border-light-200">
+        <a
+          href="https://www.servamind.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full text-left px-4 h-8 flex items-center text-sm font-medium text-serva-gray-600 hover:bg-light-200/50 transition-colors cursor-pointer rounded no-underline"
+        >
+          Visit our website
+        </a>
+        <a
+          href="https://www.servamind.com/contact"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full text-left px-4 h-8 flex items-center text-sm font-medium text-serva-gray-600 hover:bg-light-200/50 transition-colors cursor-pointer rounded no-underline"
+        >
+          Talk to our team
+        </a>
         <button
           type="button"
           onClick={() => {
             onSignOut();
             onClose();
           }}
-          className="w-full text-left px-8 py-5 text-[15px] font-medium text-serva-gray-600 hover:bg-light-300 transition-colors cursor-pointer rounded-b-2xl"
+          className="w-full text-left px-4 h-8 flex items-center text-sm font-medium text-serva-gray-400 hover:bg-light-200/50 transition-colors cursor-pointer rounded"
         >
           Sign out
         </button>
@@ -205,25 +149,16 @@ function NavBar({ user, quota, onSignOut, onNavigateDashboard, onNavigateSetting
           <span className="text-serva-gray-400 cursor-pointer">
             Get Started
           </span>
-          <a
-            href="https://www.servamind.com/data"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-serva-gray-400"
-          >
-            Why .serva
-            <ExternalLinkIcon />
-          </a>
         </div>
 
         <button
-          className="flex items-center justify-center size-8 cursor-pointer"
+          className="flex items-center justify-center size-8 mx-1 cursor-pointer"
           aria-label="Settings"
           onClick={onNavigateSettings}
         >
           <svg
-            width="24"
-            height="24"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -260,7 +195,6 @@ function NavBar({ user, quota, onSignOut, onNavigateDashboard, onNavigateSetting
       {anchorRect && user && (
         <ProfilePopover
           user={user}
-          quota={quota}
           anchorRect={anchorRect}
           onSignOut={onSignOut}
           onNavigateProfile={onNavigateProfile}

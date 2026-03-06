@@ -9,7 +9,7 @@ interface WorkflowCardProps {
 }
 
 function WorkflowCard({ stage, children, className }: WorkflowCardProps) {
-  if (stage === "upload" || stage === "download") {
+  if (stage === "upload" || stage === "download" || stage === "error") {
     return (
       <div className={cn("animate-fade-in", className)}>
         {children}

@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { http, HttpResponse, delay } from "msw";
 import { env } from "@/config/env";
 import {
   mockGoogleCallbackResponse,
@@ -41,11 +41,13 @@ export const handlers = [
   }),
 
   // Encoding (init → auth, stream → backend)
-  http.post(`${authUrl}/api/encode`, () => {
+  http.post(`${authUrl}/api/encode`, async () => {
+    await delay(500);
     return HttpResponse.json(mockEncodeInitResponse);
   }),
 
-  http.post(`${backendUrl}/api/stream/:fileRef`, () => {
+  http.post(`${backendUrl}/api/stream/:fileRef`, async () => {
+    await delay(1500);
     return HttpResponse.json(mockEncodeStreamResponse);
   }),
 
@@ -54,9 +56,12 @@ export const handlers = [
     return HttpResponse.json(mockDecodeInitResponse);
   }),
 
-  // Download
-  http.get(`${backendUrl}/download/:fileId`, () => {
-    return new HttpResponse(new Uint8Array([0x00, 0x01, 0x02]), {
+  // Download — return ~530 bytes to simulate ~47% compression of a ~1KB file
+  http.get(`${backendUrl}/download/:fileId`, async () => {
+    await delay(300);
+    const encodedBlob = new Uint8Array(530);
+    crypto.getRandomValues(encodedBlob);
+    return new HttpResponse(encodedBlob, {
       headers: { "Content-Type": "application/octet-stream" },
     });
   }),

@@ -7,13 +7,20 @@ import { useWorkflow } from "@/contexts/WorkflowContext";
 import { getFileTypeLabel, formatFileSize, validateFileSize } from "@/services/file";
 import type { FileTableItem } from "@/types/domain.types";
 
-type FileStatus = "ready" | "uploading" | "complete" | "error";
+type FileStatus = "ready" | "waiting" | "encoding" | "encoded" | "uploading" | "complete" | "error";
+
+interface EncodingFileResult {
+  encodedSize: number;
+  durationMs: number;
+}
 
 function DropZoneContainer() {
   const [files, setFiles] = useState<File[]>([]);
   const [fileStatuses, setFileStatuses] = useState<Map<string, FileStatus>>(new Map());
   const [uploading, setUploading] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
+  const [encodingResults, setEncodingResults] = useState<Map<string, EncodingFileResult>>(new Map());
+  const [encodingIndex, setEncodingIndex] = useState(0);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: encodeAsync } = useEncode();
   const { mutateAsync: decodeAsync } = useDecode();
@@ -58,11 +65,23 @@ function DropZoneContainer() {
     async (compress: boolean, privateKey: string) => {
       if (files.length === 0) return;
       setUploading(true);
+      setEncodingIndex(0);
+      setEncodingResults(new Map());
+
+      // Set all files to waiting
+      setFileStatuses(() => {
+        const map = new Map<string, FileStatus>();
+        files.forEach((f) => map.set(fileKey(f), "waiting"));
+        return map;
+      });
 
       try {
         if (compress) {
+          let idx = 0;
           for (const file of files) {
-            setStatus(file, "uploading");
+            idx++;
+            setEncodingIndex(idx);
+            setStatus(file, "encoding");
             const start = performance.now();
             const result = await encodeAsync({
               file,
@@ -71,7 +90,18 @@ function DropZoneContainer() {
               userPassword: privateKey,
             });
             const durationMs = performance.now() - start;
-            setStatus(file, "complete");
+            setStatus(file, "encoded");
+
+            // Track result for display during encoding
+            setEncodingResults((prev) => {
+              const next = new Map(prev);
+              next.set(fileKey(file), {
+                encodedSize: result.encodedSize ?? 0,
+                durationMs,
+              });
+              return next;
+            });
+
             addFileResult({
               fileName: file.name,
               originalSize: file.size,
@@ -83,8 +113,11 @@ function DropZoneContainer() {
           }
           setProcess("compress");
         } else {
+          let idx = 0;
           for (const file of files) {
-            setStatus(file, "uploading");
+            idx++;
+            setEncodingIndex(idx);
+            setStatus(file, "encoding");
             await decodeAsync({
               file,
               fileReference: crypto.randomUUID(),
@@ -106,6 +139,8 @@ function DropZoneContainer() {
         setUploading(false);
         setFiles([]);
         setFileStatuses(new Map());
+        setEncodingResults(new Map());
+        setEncodingIndex(0);
         setStage("download");
       } catch {
         setUploading(false);
@@ -165,20 +200,28 @@ function DropZoneContainer() {
     return files.map((file) => {
       const validation = validateFileSize(file);
       const fileError = validation.valid ? null : (validation.message ?? null);
-      const uploadStatus = fileStatuses.get(fileKey(file));
+      const key = fileKey(file);
+      const currentStatus = fileStatuses.get(key);
       const status: FileTableItem["status"] = fileError
         ? "error"
-        : uploadStatus ?? "ready";
+        : currentStatus ?? "ready";
+      const result = encodingResults.get(key);
 
       return {
-        name: file.name,
+        name: status === "encoded" ? file.name.replace(/\.[^.]+$/, ".serva") : file.name,
         typeLabel: getFileTypeLabel(file),
         formattedSize: formatFileSize(file.size),
         status,
         sizeError: fileError,
+        encodedSize: result ? formatFileSize(result.encodedSize) : undefined,
+        reductionPercent:
+          result && file.size > 0
+            ? Math.round(((file.size - result.encodedSize) / file.size) * 100)
+            : undefined,
+        durationSeconds: result ? result.durationMs / 1000 : undefined,
       };
     });
-  }, [files, fileStatuses]);
+  }, [files, fileStatuses, encodingResults]);
 
   return (
     <>
@@ -196,6 +239,7 @@ function DropZoneContainer() {
         processType={process}
         canStart={canStart}
         uploading={uploading}
+        encodingProgress={uploading ? { current: encodingIndex, total: files.length } : undefined}
         isDragging={isDragging}
         onFileSelect={handleFileSelect}
         onClear={handleClear}

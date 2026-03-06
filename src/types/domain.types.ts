@@ -24,7 +24,7 @@ export interface FileTableItem {
   name: string;
   typeLabel: string;
   formattedSize: string;
-  status: "ready" | "uploading" | "encoding" | "encoded" | "complete" | "error";
+  status: "ready" | "uploading" | "encoding" | "encoded" | "complete" | "error" | "waiting";
   sizeError: string | null;
   encodingProgress?: number;
   encodedSize?: string;

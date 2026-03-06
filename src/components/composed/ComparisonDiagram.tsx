@@ -4,91 +4,183 @@ interface ComparisonDiagramProps {
   className?: string;
 }
 
-function FlowArrow() {
+/** Small right-pointing arrow connector */
+function Arrow() {
   return (
     <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
+      width="21"
+      height="6"
+      viewBox="0 0 21 6"
       fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-serva-gray-300 shrink-0"
+      className="shrink-0 text-serva-gray-200"
     >
-      <path d="M5 12h14m0 0l-4-4m4 4l-4 4" />
+      <line x1="0" y1="3" x2="16" y2="3" stroke="currentColor" strokeWidth="1" />
+      <path d="M15 1 L19 3 L15 5" stroke="currentColor" strokeWidth="1" fill="none" />
     </svg>
   );
 }
 
-function FlowStep({
-  label,
-  highlight,
+/** Branching connector: one input splitting into 3 outputs */
+function BranchConnector() {
+  return (
+    <svg
+      width="24"
+      height="77"
+      viewBox="0 0 24 77"
+      fill="none"
+      className="shrink-0 text-serva-gray-200"
+    >
+      {/* Horizontal line from left to center */}
+      <line x1="0" y1="38.5" x2="8" y2="38.5" stroke="currentColor" strokeWidth="1" />
+      {/* Vertical line */}
+      <line x1="8" y1="14" x2="8" y2="63" stroke="currentColor" strokeWidth="1" />
+      {/* Top branch */}
+      <line x1="8" y1="14" x2="18" y2="14" stroke="currentColor" strokeWidth="1" />
+      <path d="M16 12 L20 14 L16 16" stroke="currentColor" strokeWidth="1" fill="none" />
+      {/* Middle branch */}
+      <line x1="8" y1="38.5" x2="18" y2="38.5" stroke="currentColor" strokeWidth="1" />
+      <path d="M16 36.5 L20 38.5 L16 40.5" stroke="currentColor" strokeWidth="1" fill="none" />
+      {/* Bottom branch */}
+      <line x1="8" y1="63" x2="18" y2="63" stroke="currentColor" strokeWidth="1" />
+      <path d="M16 61 L20 63 L16 65" stroke="currentColor" strokeWidth="1" fill="none" />
+    </svg>
+  );
+}
+
+/** Monospace step label */
+function StepLabel({
+  children,
+  variant = "default",
 }: {
-  label: string;
-  highlight?: boolean;
+  children: React.ReactNode;
+  variant?: "default" | "highlight" | "serva";
 }) {
   return (
     <div
       className={cn(
-        "px-4 py-2 rounded-[8px] text-sm font-medium whitespace-nowrap",
-        highlight
-          ? "bg-core-purple/10 text-core-purple border border-core-purple/20"
-          : "bg-light-300 text-serva-gray-400 border border-light-200"
+        "flex items-center gap-2 h-7 px-3 rounded-[8px] font-mono text-xs tracking-[1.2px] whitespace-nowrap",
+        variant === "default" && "bg-light-300 text-serva-gray-600",
+        variant === "highlight" && "bg-light-200 text-serva-gray-600",
+        variant === "serva" && "bg-serva-green text-light-300"
       )}
     >
-      {label}
+      {children}
+    </div>
+  );
+}
+
+/** Circle icon for Model A */
+function CircleIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 10 10" className="shrink-0 text-core-purple">
+      <circle cx="5" cy="5" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+/** Triangle icon for Model B */
+function TriangleIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" className="shrink-0 text-core-purple">
+      <path d="M6 1 L11 11 L1 11 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+/** Square icon for Model C */
+function SquareIcon() {
+  return (
+    <div className="size-[12px] shrink-0 border-[1.5px] border-core-purple" />
+  );
+}
+
+/** Encode icon used next to .SERVA label */
+function EncodeIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 18 18" fill="none" className="shrink-0">
+      <path d="M8.94995 0.100342C11.2713 0.100342 13.4573 0.988655 15.1179 2.60425H16.4558V4.25464C17.3304 5.64821 17.7996 7.26413 17.7996 8.94995C17.7996 10.6354 17.3319 12.2508 16.4558 13.6443V17.615H10.7615C10.1723 17.7363 9.56728 17.7996 8.94995 17.7996C8.33262 17.7996 7.72764 17.7363 7.13843 17.615H1.44409V13.6443C0.569795 12.2509 0.100342 10.6355 0.100342 8.94995C0.100342 7.26413 0.569512 5.64821 1.44409 4.25464V2.60425H2.78198C4.44258 0.988656 6.62865 0.100342 8.94995 0.100342ZM14.9177 15.4802C14.2098 16.1277 13.4157 16.6502 12.5603 17.033H15.6941L14.9177 15.4802ZM3.25073 14.9392C4.36477 16.0006 5.7221 16.7166 7.19604 17.033H10.7019C12.1755 16.7167 13.5322 15.9987 14.6462 14.9392L8.94897 3.54565L3.25073 14.9392ZM2.20581 17.033H5.3396C4.48312 16.65 3.68929 16.128 2.9812 15.4802L2.20581 17.033ZM2.02612 16.0916L2.54468 15.0544C2.36325 14.8632 2.18937 14.6665 2.02612 14.4626V16.0916ZM15.8738 14.4626C15.711 14.6669 15.537 14.8637 15.3542 15.0544L15.8738 16.0916V14.4626ZM3.02319 3.18628C2.6471 3.57113 2.31425 3.98597 2.02612 4.42651V13.4705C2.2624 13.8307 2.52939 14.1737 2.823 14.4978L8.48022 3.18628H3.02319ZM15.0759 14.4978C15.3697 14.1736 15.6374 13.8309 15.8738 13.4705V4.42651C15.5839 3.98741 15.251 3.57104 14.8767 3.18628H9.41968L15.0759 14.4978ZM1.44409 5.47046C0.944059 6.54633 0.68042 7.72708 0.68042 8.94995C0.68042 10.1725 0.944301 11.3528 1.44409 12.4285V5.47046ZM16.4539 12.4285C16.9537 11.3525 17.2185 10.171 17.2185 8.94995C17.2185 7.72705 16.9539 6.54635 16.4539 5.47046V12.4285ZM8.94995 0.681396C6.98975 0.681396 5.13446 1.36006 3.65015 2.6062H14.2488C12.7645 1.36177 10.9098 0.681396 8.94995 0.681396Z" fill="white" stroke="white" strokeWidth="0.2"/>
+    </svg>
+  );
+}
+
+/** One row of the "Without Servamind" flow */
+function WithoutRow({
+  icon,
+  modelLabel,
+}: {
+  icon: React.ReactNode;
+  modelLabel: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <StepLabel>DATA SET</StepLabel>
+      <Arrow />
+      <StepLabel variant="highlight">PREPROCESS</StepLabel>
+      <Arrow />
+      <StepLabel>
+        {icon}
+        {modelLabel}
+      </StepLabel>
     </div>
   );
 }
 
 function ComparisonDiagram({ className }: ComparisonDiagramProps) {
   return (
-    <div className={cn("mt-10", className)}>
+    <div className={cn("flex flex-col items-center gap-12 mt-10", className)}>
       {/* Section heading */}
-      <h3 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] text-center">
-        Then use the same .serva files across every model
-      </h3>
-      <p className="text-sm text-serva-gray-400 text-center mt-3 leading-[1.4] tracking-[-0.42px] max-w-[480px] mx-auto">
-        Skip repeated preprocessing. Encode once and feed the same files into
-        any model or workflow.
-      </p>
+      <div className="flex flex-col items-center gap-6">
+        <h3 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] text-center">
+          Then never preprocess the data again
+        </h3>
+        <p className="text-sm text-serva-gray-400 text-center leading-[1.4] tracking-[-0.42px] max-w-[371px]">
+          Instead of rebuilding preprocessing for each pipeline, load your .serva
+          files directly into the workflow you already use.
+        </p>
+      </div>
 
-      {/* Comparison flows */}
-      <div className="mt-8 grid grid-cols-2 gap-6">
+      {/* Comparison cards */}
+      <div className="flex items-center gap-4">
         {/* Without Servamind */}
-        <div className="border border-light-200 rounded-[16px] p-6">
-          <p className="text-xs font-medium text-serva-gray-300 uppercase tracking-[0.48px] mb-4">
+        <div className="bg-white border border-light-200 rounded-2xl p-8 flex flex-col items-center gap-6 overflow-hidden">
+          <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px] text-center">
             Without Servamind
           </p>
-          <div className="flex items-center gap-3 flex-wrap">
-            <FlowStep label="Dataset" />
-            <FlowArrow />
-            <FlowStep label="Preprocess" />
-            <FlowArrow />
-            <FlowStep label="Train" />
+          <div className="flex flex-col gap-2">
+            <WithoutRow icon={<CircleIcon />} modelLabel="TRAIN MODEL A" />
+            <WithoutRow icon={<TriangleIcon />} modelLabel="TRAIN MODEL B" />
+            <WithoutRow icon={<SquareIcon />} modelLabel="TRAIN MODEL C" />
           </div>
-          <p className="text-xs text-serva-gray-300 mt-4">
-            Reprocess data for every model and experiment
-          </p>
         </div>
 
         {/* With Servamind */}
-        <div className="border border-light-200 rounded-[16px] p-6">
-          <p className="text-xs font-medium text-serva-gray-300 uppercase tracking-[0.48px] mb-4">
+        <div className="bg-white border border-light-200 rounded-2xl p-8 flex flex-col items-center gap-6 overflow-hidden">
+          <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px] text-center">
             With Servamind
           </p>
-          <div className="flex items-center gap-3 flex-wrap">
-            <FlowStep label="Dataset" />
-            <FlowArrow />
-            <FlowStep label=".serva" highlight />
-            <FlowArrow />
-            <FlowStep label="Train" />
+          <div className="flex items-center gap-2 justify-center">
+            <StepLabel>DATA SET</StepLabel>
+            <Arrow />
+            <StepLabel variant="serva">
+              <EncodeIcon />
+              .SERVA
+            </StepLabel>
+            <BranchConnector />
+            <div className="flex flex-col gap-2">
+              <StepLabel>
+                <CircleIcon />
+                TRAIN MODEL A
+              </StepLabel>
+              <StepLabel>
+                <TriangleIcon />
+                TRAIN MODEL B
+              </StepLabel>
+              <StepLabel>
+                <SquareIcon />
+                TRAIN MODEL C
+              </StepLabel>
+            </div>
           </div>
-          <p className="text-xs text-serva-gray-300 mt-4">
-            Encode once, reuse everywhere
-          </p>
         </div>
       </div>
     </div>

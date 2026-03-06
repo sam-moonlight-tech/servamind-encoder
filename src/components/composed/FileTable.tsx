@@ -109,14 +109,14 @@ function DownloadIcon() {
   );
 }
 
-function HoloProgressBar({ value }: { value: number }) {
+function HoloProgressBar({ value, indeterminate }: { value: number; indeterminate?: boolean }) {
   const clampedValue = Math.min(Math.max(value, 0), 100);
   return (
     <div className="w-[120px] h-[4px] bg-light-200 rounded-[12px] overflow-hidden shrink-0">
       <div
-        className="h-full rounded-[12px]"
+        className={cn("h-full rounded-[12px]", indeterminate && "animate-pulse")}
         style={{
-          width: `${clampedValue}%`,
+          width: indeterminate ? "70%" : `${clampedValue}%`,
           backgroundImage:
             "linear-gradient(90deg, var(--color-holo-green) 0%, var(--color-holo-seafoam) 20%, var(--color-holo-blue) 40%, var(--color-holo-pink) 60%, var(--color-holo-orange) 80%, var(--color-holo-yellow) 100%)",
         }}
@@ -169,7 +169,7 @@ function FileRow({
               </span>
               {file.reductionPercent != null && (
                 <span className="text-serva-gray-200">
-                  (-{file.reductionPercent}%)
+                  (-{Math.abs(file.reductionPercent)}%)
                 </span>
               )}
             </div>
@@ -210,11 +210,22 @@ function FileRow({
 
         {isEncoding && (
           <div className="flex items-center gap-2">
-            <HoloProgressBar value={file.encodingProgress ?? 0} />
+            <HoloProgressBar
+              value={file.encodingProgress ?? 0}
+              indeterminate={file.encodingProgress == null}
+            />
             <span className="text-sm text-serva-gray-400 leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
-              {file.encodingProgress ?? 0}%
+              {file.encodingProgress != null
+                ? `${file.encodingProgress}%`
+                : "Encoding..."}
             </span>
           </div>
+        )}
+
+        {file.status === "waiting" && (
+          <span className="text-sm text-serva-gray-200 leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
+            Waiting
+          </span>
         )}
 
         {(isReady || file.status === "uploading") && (
@@ -262,11 +273,36 @@ function FileRow({
 }
 
 function FileTable({ files, encoding, onRemove, onDownload, className }: FileTableProps) {
+  if (encoding) {
+    return (
+      <div className={cn("relative rounded-[16px] p-[2px]", className)}>
+        {/* Animated holographic border — colors cycle via @property --holo-angle */}
+        <div
+          className="absolute inset-0 rounded-[16px] animate-holo-spin"
+          style={{
+            backgroundImage:
+              "conic-gradient(from var(--holo-angle), var(--color-holo-green), var(--color-holo-seafoam), var(--color-holo-blue), var(--color-holo-pink), var(--color-holo-orange), var(--color-holo-yellow), var(--color-holo-green))",
+          }}
+        />
+        <div className="relative rounded-[14px] overflow-clip">
+          {files.map((file, i) => (
+            <FileRow
+              key={`${file.name}-${i}`}
+              file={file}
+              index={i}
+              onRemove={undefined}
+              onDownload={onDownload}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
-        "border rounded-[16px] overflow-clip",
-        encoding ? "border-holo-green" : "border-light-200",
+        "border border-light-200 rounded-[16px] overflow-clip",
         className
       )}
     >
@@ -275,7 +311,7 @@ function FileTable({ files, encoding, onRemove, onDownload, className }: FileTab
           key={`${file.name}-${i}`}
           file={file}
           index={i}
-          onRemove={encoding ? undefined : onRemove}
+          onRemove={onRemove}
           onDownload={onDownload}
         />
       ))}

@@ -72,6 +72,45 @@ function ArrowRightIcon() {
   );
 }
 
+function SmallArrow() {
+  return (
+    <svg
+      width="21"
+      height="6"
+      viewBox="0 0 21 6"
+      fill="none"
+      className="shrink-0"
+    >
+      <path d="M0 3h18M15 0.5l3 2.5-3 2.5" stroke="currentColor" strokeWidth="1" className="text-serva-gray-200" />
+    </svg>
+  );
+}
+
+function ServaEncoderBadgeIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      className="shrink-0"
+    >
+      <rect width="14" height="14" rx="2.5" fill="white" fillOpacity="0.9" />
+      <text
+        x="7"
+        y="10"
+        textAnchor="middle"
+        fill="#51a500"
+        fontSize="6.5"
+        fontFamily="monospace"
+        fontWeight="bold"
+      >
+        S
+      </text>
+    </svg>
+  );
+}
+
 function formatReduction(original: number, encoded: number): number {
   if (original === 0) return 0;
   return Math.round(((original - encoded) / original) * 100);
@@ -152,42 +191,73 @@ function DownloadStageView({
       </div>
 
       {/* What's next section */}
-      <div className="flex flex-col items-center gap-6 py-10 px-6">
-        <p className="text-xl font-semibold tracking-[-0.6px] leading-[1.1] whitespace-nowrap">
-          <span className="text-serva-gray-400">What&apos;s next? </span>
-          <span className="text-serva-gray-600">
-            Train with your .serva files
-          </span>
-        </p>
-        <p className="text-sm text-serva-gray-400 text-center tracking-[-0.42px] leading-[1.4] max-w-[371px]">
-          Your files are now encoded in a deterministic format designed for model
-          training and reuse.
-        </p>
-        <Button size="md">
-          Get Started
-          <ArrowRightIcon />
-        </Button>
-      </div>
-
-      {/* Info cards */}
-      <div className="grid grid-cols-2 gap-4 px-6 pb-8">
-        <div className="border border-light-200 rounded-[12px] p-6 flex flex-col items-center gap-3 text-center">
-          <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px]">
-            Raw data &rarr; .serva
+      <div className="flex flex-col items-center gap-12 py-10 px-6">
+        <div className="flex flex-col items-center gap-6">
+          <p className="text-xl font-semibold tracking-[-0.6px] leading-[1.1] whitespace-nowrap">
+            <span className="text-serva-gray-400">What&apos;s next? </span>
+            <span className="text-serva-gray-600">
+              Train with your .serva files
+            </span>
           </p>
-          <p className="text-sm text-serva-gray-400 tracking-[-0.42px] leading-[1.4]">
-            Turn source files into a consistent, encoded format built for model
-            training.
+          <p className="text-sm text-serva-gray-400 text-center tracking-[-0.42px] leading-[1.4] max-w-[371px]">
+            Your files are now encoded in a deterministic format designed for
+            model training and reuse.
           </p>
         </div>
-        <div className="border border-light-200 rounded-[12px] p-6 flex flex-col items-center gap-3 text-center">
-          <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px]">
-            .serva &rarr; Model training
-          </p>
-          <p className="text-sm text-serva-gray-400 tracking-[-0.42px] leading-[1.4]">
-            Use the same encoded file across experiments and models without
-            rebuilding preprocessing pipelines.
-          </p>
+
+        {/* Step cards */}
+        <div className="flex items-stretch gap-4 justify-center">
+          {/* Step 1 — dimmed */}
+          <div className="flex w-[339px] opacity-50">
+            <div className="bg-light-300 border border-light-200 rounded-[16px] overflow-clip p-8 flex flex-1 flex-col items-center gap-6">
+              <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px] leading-[1.1] text-center w-full">
+                Step 1
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="bg-white rounded-[8px] px-3 py-2 font-mono text-xs text-serva-gray-600 tracking-[1.2px] leading-[1.1]">
+                  RAW DATA
+                </span>
+                <SmallArrow />
+                <span className="bg-serva-green rounded-[8px] px-3 py-2 font-mono text-xs text-light-300 tracking-[1.2px] leading-[1.1] flex items-center gap-2">
+                  .SERVA
+                  <ServaEncoderBadgeIcon />
+                </span>
+              </div>
+              <p className="text-sm text-serva-gray-400 text-center tracking-[-0.42px] leading-[1.4] w-[275px]">
+                Turn source files into a consistent, encoded format built for
+                model training.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 2 — active */}
+          <div className="flex w-[339px]">
+            <div className="bg-white border border-light-200 rounded-[16px] overflow-clip p-8 flex flex-1 flex-col items-center gap-9">
+              <div className="flex flex-col items-center gap-6 w-full">
+                <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px] leading-[1.1] text-center w-full">
+                  Step 2
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="bg-serva-green rounded-[8px] px-3 py-2 font-mono text-xs text-light-300 tracking-[1.2px] leading-[1.1] flex items-center gap-2">
+                    .SERVA
+                    <ServaEncoderBadgeIcon />
+                  </span>
+                  <SmallArrow />
+                  <span className="bg-light-300 rounded-[8px] px-3 py-2 font-mono text-xs text-serva-gray-600 tracking-[1.2px] leading-[1.1]">
+                    MODEL TRAINING
+                  </span>
+                </div>
+                <p className="text-sm text-serva-gray-400 text-center tracking-[-0.42px] leading-[1.4] w-[275px]">
+                  Use the same encoded file across experiments and models
+                  without rebuilding preprocessing pipelines.
+                </p>
+              </div>
+              <Button size="md">
+                Train your Models
+                <ArrowRightIcon />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

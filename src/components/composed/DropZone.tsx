@@ -120,20 +120,20 @@ function DropZone({
             <p className="text-sm text-serva-gray-400 text-center max-w-[380px] leading-[1.4] tracking-[-0.42px]">
               {isDecoding
                 ? "Drop or upload a .serva file to decode it back to its original format."
-                : "Upload once and securely reuse your encoded data across every AI model and workflow."}
+                : "Upload once and securely reuse the same encoded dataset across models, experiments, and pipelines."}
             </p>
 
             {/* File limit text */}
             <p className="text-xs text-serva-gray-300 text-center">
               {isDecoding
                 ? "Up to 100 MB \u00b7 .serva files only"
-                : "Up to 100 MB \u2014 txt, csv, json, pdf, png, jpg, mp4"}
+                : "Up to 100 MB \u00b7 txt, csv, json, pdf, png, jpg, mp4"}
             </p>
 
             {/* Select Files pill button */}
             {!isDecoding && (
               <button
-                className="mt-1 bg-core-purple text-light-200 rounded-[500px] px-7 py-3 text-lg font-medium transition-colors hover:bg-core-purple/90 active:bg-core-purple/80 cursor-pointer"
+                className="bg-core-purple text-light-200 rounded-[8px] px-3 h-9 text-sm font-semibold transition-colors hover:bg-core-purple/90 active:bg-core-purple/80 cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleClick();

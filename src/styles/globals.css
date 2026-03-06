@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@property --holo-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
 @theme {
   /* Colors - Brand */
   --color-serva-purple: #630066;
@@ -50,14 +56,18 @@
   --animate-shimmer: shimmer 1.5s ease-in-out infinite;
   --animate-fade-in: fade-in 0.3s ease-out;
   --animate-slide-up: slide-up 0.4s ease-out;
+  --animate-dialog-in: dialog-in 0.2s ease-out;
+  --animate-dialog-out: dialog-out 0.15s ease-in forwards;
+  --animate-backdrop-in: backdrop-in 0.2s ease-out;
+  --animate-backdrop-out: backdrop-out 0.15s ease-in forwards;
 }
 
 @keyframes holo-spin {
   from {
-    transform: rotate(0deg);
+    --holo-angle: 0deg;
   }
   to {
-    transform: rotate(360deg);
+    --holo-angle: 360deg;
   }
 }
 
@@ -90,6 +100,46 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dialog-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 

@@ -20,16 +20,6 @@ function Skeleton({ className }: { className?: string }) {
   );
 }
 
-function InfoIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="7" cy="7" r="6" />
-      <path d="M7 9.5V7" />
-      <circle cx="7" cy="4.5" r="0.5" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
 function SettingsPage() {
   const { user } = useAuth();
   const { data: quota, isPending } = useQuota();
@@ -52,14 +42,14 @@ function SettingsPage() {
           activeKey={activeSection}
           onSelect={(key) => setActiveSection(key as SettingsSection)}
         />
-        <ContentPanel className="py-10 px-12">
+        <ContentPanel className="py-10 px-16">
             {activeSection === "profile" && (
               <div>
-                <h1 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] mb-8">
+                <h1 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] mb-16">
                   Your profile
                 </h1>
 
-                <div className="max-w-[394px] space-y-8">
+                <div className="max-w-[394px] ml-[10%] space-y-8">
                   <div>
                     <label className="block text-sm font-medium text-serva-gray-600 mb-1">
                       Name
@@ -121,7 +111,7 @@ function SettingsPage() {
                 </div>
 
                 {isPending ? (
-                  <div className="max-w-[800px] space-y-8">
+                  <div className="max-w-[805px] ml-[10%] space-y-8">
                     <Skeleton className="h-6 w-24" />
                     <Skeleton className="h-12 w-64" />
                     <Skeleton className="h-2 w-full rounded-[12px]" />
@@ -129,59 +119,126 @@ function SettingsPage() {
                     <Skeleton className="h-32 w-full rounded-[16px]" />
                   </div>
                 ) : (
-                  <div className="max-w-[800px] space-y-8">
-                    {/* Monthly usage */}
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-sm font-medium text-serva-gray-600">
-                          Monthly usage
-                        </span>
-                        <span className="text-serva-gray-300">
-                          <InfoIcon />
-                        </span>
+                  (() => {
+                    const isOverLimit = (quota?.percentage_used ?? 0) >= 100;
+                    const overageBytes = isOverLimit && quota
+                      ? quota.total_bytes_this_month - quota.quota_bytes
+                      : 0;
+                    const overageGb = overageBytes / (1024 ** 3);
+                    const estimatedCharge = (overageGb * 0.005).toFixed(2);
+                    // TODO: replace with actual payment method check
+                    const hasPaymentMethod = isOverLimit;
+
+                    return (
+                      <div className="max-w-[805px] ml-[10%] space-y-8">
+                        {/* Monthly usage */}
+                        <div>
+                          <p className="text-sm font-medium text-serva-gray-600 mb-2">
+                            Monthly usage
+                          </p>
+                          <p className="text-xs text-serva-gray-400 mb-8">
+                            You get 1 TB free every month.
+                            {!hasPaymentMethod && !isOverLimit && " Add a payment method to continue encoding once your free usage runs out."}
+                          </p>
+
+                          <div className="flex items-baseline gap-1 mb-4">
+                            {isOverLimit ? (
+                              <>
+                                <span className="text-2xl font-medium text-serva-gray-200">
+                                  {quota ? formatFileSize(quota.quota_bytes) : "0 GB"}
+                                </span>
+                                <span className="text-2xl font-medium text-serva-gray-200">
+                                  {" / "}
+                                  {quota ? formatFileSize(quota.quota_bytes) : "0 GB"}
+                                </span>
+                                <span className="text-2xl font-medium text-serva-gray-600">
+                                  {" + "}
+                                  {formatFileSize(overageBytes)}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-2xl font-medium text-serva-gray-600">
+                                  {quota
+                                    ? formatFileSize(quota.total_bytes_this_month)
+                                    : "0 GB"}
+                                </span>
+                                <span className="text-2xl font-medium text-serva-gray-400">
+                                  {" / "}
+                                  {quota ? formatFileSize(quota.quota_bytes) : "0 GB"}
+                                </span>
+                              </>
+                            )}
+                          </div>
+
+                          <ProgressBar
+                            value={quota?.percentage_used ?? 0}
+                            max={100}
+                            variant="holographic"
+                            className="mb-3"
+                          />
+
+                          <p className="text-xs text-serva-gray-400">
+                            Resets in {daysRemaining} day{daysRemaining === 1 ? "" : "s"}
+                          </p>
+                        </div>
+
+                        {/* Over-limit: card with pricing + estimated charge */}
+                        {isOverLimit && (
+                          <div className="border border-light-200 rounded-[16px] p-6 space-y-8">
+                            <div>
+                              <p className="text-sm font-medium text-serva-gray-600 mb-2">
+                                Keep encoding after your free 1 TB
+                              </p>
+                              <p className="text-xs text-serva-gray-400">
+                                Additional usage is{" "}
+                                <span className="text-serva-gray-600">$0.005/GB</span>
+                                , billed at the end of each monthly cycle.
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-serva-gray-600 mb-2">
+                                Estimated charge on{" "}
+                                {resetDate.toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                              </p>
+                              <p className="text-xs text-serva-gray-400">
+                                ${estimatedCharge}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Under limit, no payment: upsell card */}
+                        {!isOverLimit && !hasPaymentMethod && (
+                          <div className="border border-light-200 rounded-[16px] p-6">
+                            <p className="text-sm font-medium text-serva-gray-600 mb-2">
+                              Keep encoding after your free 1 TB
+                            </p>
+                            <p className="text-xs text-serva-gray-400 mb-8">
+                              Add a payment method to continue encoding once your free usage runs out.
+                              {" "}Additional usage is{" "}
+                              <span className="text-serva-gray-600">$0.005/GB</span>
+                              , billed at the end of each monthly cycle.
+                            </p>
+                            <Button variant="primary" size="md">
+                              Add payment method
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Under limit, has payment: standalone button */}
+                        {!isOverLimit && hasPaymentMethod && (
+                          <Button variant="primary" size="md">
+                            Add payment method
+                          </Button>
+                        )}
                       </div>
-                      <p className="text-xs text-serva-gray-400 mb-4">
-                        You get 1 TB free every month.
-                      </p>
-
-                      <div className="flex items-baseline gap-1 mb-4">
-                        <span className="text-2xl font-medium text-serva-gray-600">
-                          {quota
-                            ? formatFileSize(quota.total_bytes_this_month)
-                            : "0 GB"}
-                        </span>
-                        <span className="text-2xl text-serva-gray-400">
-                          {" / "}
-                          {quota ? formatFileSize(quota.quota_bytes) : "0 GB"}
-                        </span>
-                      </div>
-
-                      <ProgressBar
-                        value={quota?.percentage_used ?? 0}
-                        max={100}
-                        className="h-2 mb-3"
-                      />
-
-                      <p className="text-xs text-serva-gray-400">
-                        Resets in {daysRemaining} day{daysRemaining === 1 ? "" : "s"}
-                      </p>
-                    </div>
-
-                    {/* Upsell card */}
-                    <div className="border border-light-200 rounded-[16px] p-6">
-                      <p className="text-sm font-medium text-serva-gray-600 mb-2">
-                        Keep encoding after your free 1 TB
-                      </p>
-                      <p className="text-xs text-serva-gray-400 mb-4">
-                        Usage beyond your free allocation is billed at{" "}
-                        <span className="font-semibold text-serva-gray-600">$0.005/GB</span>.
-                        Only pay for what you use.
-                      </p>
-                      <Button variant="primary" size="md">
-                        Add payment method
-                      </Button>
-                    </div>
-                  </div>
+                    );
+                  })()
                 )}
               </div>
             )}

@@ -1,4 +1,3 @@
-import { ProgressBar } from "@/components/ui";
 import { DropZone } from "./DropZone";
 import { ComparisonDiagram } from "./ComparisonDiagram";
 import { FileTable } from "./FileTable";
@@ -13,6 +12,7 @@ interface UploadStageViewProps {
   processType: ProcessType;
   canStart: boolean;
   uploading: boolean;
+  encodingProgress?: { current: number; total: number };
   isDragging: boolean;
   onFileSelect: (files: File[]) => void;
   onClear: () => void;
@@ -33,6 +33,7 @@ function UploadStageView({
   processType,
   canStart,
   uploading,
+  encodingProgress,
   isDragging,
   onFileSelect,
   onClear,
@@ -47,17 +48,25 @@ function UploadStageView({
 }: UploadStageViewProps) {
   if (uploading) {
     return (
-      <div className={cn("space-y-4 p-8", className)}>
-        <h3 className="text-lg font-semibold text-serva-gray-600">
-          Uploading...
-        </h3>
-        <p className="text-serva-gray-400">
-          Please wait while your file is uploaded.
-        </p>
-        <ProgressBar value={0} indeterminate />
-        <p className="text-sm text-serva-gray-400 text-center italic">
-          Uploading file to server...
-        </p>
+      <div className={cn("space-y-0", className)}>
+        {/* Encoding header */}
+        <div className="flex items-center py-5 px-4">
+          <div className="flex items-center gap-2 text-xl font-semibold tracking-[-0.6px] leading-[1.1] whitespace-nowrap">
+            <span className="text-serva-gray-600">
+              Encoding your files...
+            </span>
+            {encodingProgress && (
+              <span className="text-serva-gray-400">
+                ({encodingProgress.current}/{encodingProgress.total})
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* File table with holo border */}
+        <div className="px-4 pb-6">
+          <FileTable files={fileTableItems} encoding />
+        </div>
       </div>
     );
   }
