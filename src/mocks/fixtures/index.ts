@@ -86,9 +86,9 @@ export const mockUsageResponse: UsageResponse = {
   user_id: "dev-user",
   beta_tier_active: true,
   beta_expiry_date: "2026-06-01T00:00:00Z",
-  usage_this_month_bytes: 966_367_641_600, // ~900 GB — triggers usage limit modal on most uploads
-  quota_limit_bytes: 1_099_511_627_776,    // ~1 TB
-  quota_used_percent: 87.89,
+  usage_this_month_bytes: 1_099_511_527_776, // ~100 bytes under 1 TB — any file triggers usage limit modal
+  quota_limit_bytes: 1_099_511_627_776,     // ~1 TB
+  quota_used_percent: 99.99,
   overage_bytes: 0,
   overage_charges: 0,
   total_lifetime_tb_encoded: 0.9,
