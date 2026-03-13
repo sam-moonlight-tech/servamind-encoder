@@ -6,17 +6,14 @@ export interface HealthService {
   getBackendHealth(): Promise<BackendHealthResponse>;
 }
 
-export function createHealthService(
-  authClient: HttpClient,
-  backendClient: HttpClient
-): HealthService {
+export function createHealthService(client: HttpClient): HealthService {
   return {
     getAuthHealth() {
-      return authClient.get<AuthHealthResponse>("/health");
+      return client.get<AuthHealthResponse>("/health");
     },
 
     getBackendHealth() {
-      return backendClient.get<BackendHealthResponse>("/health");
+      return client.get<BackendHealthResponse>("/backend/health");
     },
   };
 }

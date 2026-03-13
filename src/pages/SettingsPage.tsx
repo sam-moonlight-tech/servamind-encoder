@@ -4,7 +4,7 @@ import { ContentPanel } from "@/components/layout/ContentPanel";
 import { NavBarContainer } from "@/containers";
 import { Sidebar, SETTINGS_SECTIONS, Footer } from "@/components/composed";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuota } from "@/hooks/data/useQuota";
+import { useUsage } from "@/hooks/data/useQuota";
 import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { formatFileSize } from "@/services/file/format";
@@ -22,14 +22,16 @@ function Skeleton({ className }: { className?: string }) {
 
 function SettingsPage() {
   const { user } = useAuth();
-  const { data: quota, isPending } = useQuota();
+  const { data: usage, isPending } = useUsage();
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
 
   const displayName = user?.email?.split("@")[0] ?? "";
   const displayEmail = user?.email ?? "";
 
-  const now = new Date();
-  const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const [now] = useState(() => new Date());
+  const resetDate = usage?.quota_resets_at
+    ? new Date(usage.quota_resets_at)
+    : new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const daysRemaining = Math.ceil(
     (resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
   );
@@ -120,12 +122,9 @@ function SettingsPage() {
                   </div>
                 ) : (
                   (() => {
-                    const isOverLimit = (quota?.percentage_used ?? 0) >= 100;
-                    const overageBytes = isOverLimit && quota
-                      ? quota.total_bytes_this_month - quota.quota_bytes
-                      : 0;
-                    const overageGb = overageBytes / (1024 ** 3);
-                    const estimatedCharge = (overageGb * 0.005).toFixed(2);
+                    const isOverLimit = (usage?.quota_used_percent ?? 0) >= 100;
+                    const overageBytes = usage?.overage_bytes ?? 0;
+                    const estimatedCharge = usage?.overage_charges?.toFixed(2) ?? "0.00";
                     // TODO: replace with actual payment method check
                     const hasPaymentMethod = isOverLimit;
 
@@ -145,11 +144,11 @@ function SettingsPage() {
                             {isOverLimit ? (
                               <>
                                 <span className="text-2xl font-medium text-serva-gray-200">
-                                  {quota ? formatFileSize(quota.quota_bytes) : "0 GB"}
+                                  {usage?.quota_limit_bytes ? formatFileSize(usage.quota_limit_bytes) : "0 GB"}
                                 </span>
                                 <span className="text-2xl font-medium text-serva-gray-200">
                                   {" / "}
-                                  {quota ? formatFileSize(quota.quota_bytes) : "0 GB"}
+                                  {usage?.quota_limit_bytes ? formatFileSize(usage.quota_limit_bytes) : "0 GB"}
                                 </span>
                                 <span className="text-2xl font-medium text-serva-gray-600">
                                   {" + "}
@@ -159,20 +158,20 @@ function SettingsPage() {
                             ) : (
                               <>
                                 <span className="text-2xl font-medium text-serva-gray-600">
-                                  {quota
-                                    ? formatFileSize(quota.total_bytes_this_month)
+                                  {usage
+                                    ? formatFileSize(usage.usage_this_month_bytes)
                                     : "0 GB"}
                                 </span>
                                 <span className="text-2xl font-medium text-serva-gray-400">
                                   {" / "}
-                                  {quota ? formatFileSize(quota.quota_bytes) : "0 GB"}
+                                  {usage?.quota_limit_bytes ? formatFileSize(usage.quota_limit_bytes) : "0 GB"}
                                 </span>
                               </>
                             )}
                           </div>
 
                           <ProgressBar
-                            value={quota?.percentage_used ?? 0}
+                            value={usage?.quota_used_percent ?? 0}
                             max={100}
                             variant="holographic"
                             className="mb-3"

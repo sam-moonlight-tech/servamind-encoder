@@ -4,11 +4,11 @@ import { cn } from "@/lib/utils";
 import { formatFileSize } from "@/services/file";
 import { ServamindLogo } from "@/components/composed/ServamindLogo";
 import type { AuthUser } from "@/types/domain.types";
-import type { QuotaResponse } from "@/types/api.types";
+import type { UsageResponse } from "@/types/api.types";
 
 interface NavBarProps {
   user: AuthUser | null;
-  quota: QuotaResponse | null;
+  usage: UsageResponse | null;
   onSignOut: () => void;
   onNavigateDashboard?: () => void;
   onNavigateSettings?: () => void;
@@ -38,7 +38,11 @@ function ProfilePopover({
       }
     }
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    window.addEventListener("scroll", onClose, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("scroll", onClose, true);
+    };
   }, [onClose]);
 
   const top = anchorRect.bottom + 8;
@@ -104,7 +108,7 @@ function ProfilePopover({
   );
 }
 
-function NavBar({ user, quota, onSignOut, onNavigateDashboard, onNavigateSettings, onNavigateProfile, className }: NavBarProps) {
+function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSettings, onNavigateProfile, className }: NavBarProps) {
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const avatarRef = useRef<HTMLButtonElement>(null);
 
@@ -119,11 +123,11 @@ function NavBar({ user, quota, onSignOut, onNavigateDashboard, onNavigateSetting
     setAnchorRect(null);
   }, []);
 
-  const usedDisplay = quota
-    ? formatFileSize(quota.total_bytes_this_month)
+  const usedDisplay = usage
+    ? formatFileSize(usage.usage_this_month_bytes)
     : "0";
-  const totalDisplay = quota
-    ? formatFileSize(quota.quota_bytes)
+  const totalDisplay = usage?.quota_limit_bytes
+    ? formatFileSize(usage.quota_limit_bytes)
     : "—";
 
   const initial = user?.email?.[0]?.toUpperCase() ?? "U";

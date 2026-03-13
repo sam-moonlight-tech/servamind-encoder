@@ -5,6 +5,7 @@ import App from "@/App";
 
 async function enableMocking() {
   if (!import.meta.env.DEV) return;
+  if (import.meta.env.VITE_DEMO_MODE !== "true") return;
   const { worker } = await import("./mocks/browser");
   return worker.start({ onUnhandledRequest: "bypass" });
 }

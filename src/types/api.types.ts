@@ -16,13 +16,11 @@ export interface GoogleCallbackPayload {
 export interface GoogleCallbackResponse {
   user_id: string;
   email: string;
-  google_id: string;
-  plan_type: string;
-  subscription_status: string;
+  plan_type: "free" | "premium";
+  subscription_status: "active" | "canceled" | "past_due" | "none";
   beta_tier_active: boolean;
-  beta_enrolled_at: string;
+  beta_enrolled_at: string | null;
   created_at: string;
-  session_token: string;
 }
 
 // API Keys
@@ -36,6 +34,7 @@ export interface CreateApiKeyResponse {
 export interface ApiKeyItem {
   key_id: string;
   key_prefix: string;
+  revoked: boolean;
   created_at: string;
   last_used_at: string | null;
 }
@@ -47,6 +46,8 @@ export interface EncodeInitPayload {
   file_reference: string;
   idempotency_key: string;
   file_size_bytes: number;
+  file_extension?: string;
+  original_filename?: string;
   user_password: string;
 }
 
@@ -58,6 +59,10 @@ export interface EncodeInitResponse {
 
 export interface EncodeStreamResponse {
   status: string;
+  file_id: string;
+  original_size_bytes: number;
+  encoded_size_bytes: number;
+  file_size_bytes: number;
 }
 
 // Decoding
@@ -69,19 +74,29 @@ export interface DecodeInitPayload {
 
 export interface DecodeInitResponse {
   streaming_token: string;
+  file_reference: string;
 }
 
 export interface DecodeStreamResponse {
-  status: string;
+  file_id: string;
+  original_filename: string;
+  file_size_bytes: number;
+  download_url: string;
 }
 
-// Quota
-export interface QuotaResponse {
-  plan_type: string;
-  total_bytes_this_month: number;
-  quota_bytes: number;
-  quota_remaining_bytes: number;
-  percentage_used: number;
+// Usage
+export interface UsageResponse {
+  user_id: string;
+  beta_tier_active: boolean;
+  beta_expiry_date: string;
+  usage_this_month_bytes: number;
+  quota_limit_bytes: number | null;
+  quota_used_percent: number;
+  overage_bytes: number;
+  overage_charges: number;
+  total_lifetime_tb_encoded: number;
+  estimated_savings_bytes: number;
+  quota_resets_at: string;
 }
 
 // Stats
@@ -102,6 +117,20 @@ export interface ExtensionStat {
 export interface ExtensionsStatsResponse {
   total_files_encoded: number;
   extensions: ExtensionStat[];
+}
+
+// Email Auth
+export interface EmailSendLinkPayload {
+  email: string;
+}
+
+export interface EmailSendLinkResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface EmailVerifyPayload {
+  token: string;
 }
 
 // Health

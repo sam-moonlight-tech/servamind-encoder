@@ -31,7 +31,7 @@ export function useDecode() {
       onInitComplete?.(init);
 
       const buffer = await file.arrayBuffer();
-      await encoderService.decodeStream(buffer, init.streaming_token);
+      await encoderService.decodeStream(buffer, init.streaming_token, userPassword);
       onStreamComplete?.();
 
       return { init };

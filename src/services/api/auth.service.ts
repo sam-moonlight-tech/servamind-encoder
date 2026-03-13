@@ -3,11 +3,17 @@ import type {
   GoogleCallbackResponse,
   CreateApiKeyResponse,
   ListApiKeysResponse,
+  EmailSendLinkPayload,
+  EmailSendLinkResponse,
+  EmailVerifyPayload,
 } from "@/types/api.types";
 import type { HttpClient } from "./client";
 
 export interface AuthService {
   googleCallback(payload: GoogleCallbackPayload): Promise<GoogleCallbackResponse>;
+  getMe(): Promise<GoogleCallbackResponse>;
+  sendEmailLink(payload: EmailSendLinkPayload): Promise<EmailSendLinkResponse>;
+  verifyEmailToken(payload: EmailVerifyPayload): Promise<GoogleCallbackResponse>;
   logout(): Promise<void>;
   createApiKey(): Promise<CreateApiKeyResponse>;
   revokeApiKey(keyId: string): Promise<void>;
@@ -18,6 +24,18 @@ export function createAuthService(client: HttpClient): AuthService {
   return {
     googleCallback(payload) {
       return client.post<GoogleCallbackResponse>("/auth/google/callback", payload);
+    },
+
+    getMe() {
+      return client.get<GoogleCallbackResponse>("/auth/me");
+    },
+
+    sendEmailLink(payload) {
+      return client.post<EmailSendLinkResponse>("/auth/email/send-link", payload);
+    },
+
+    verifyEmailToken(payload) {
+      return client.post<GoogleCallbackResponse>("/auth/email/verify", payload);
     },
 
     logout() {

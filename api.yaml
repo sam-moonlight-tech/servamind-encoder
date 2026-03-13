@@ -1,0 +1,1717 @@
+﻿openapi: 3.0.3
+
+info:
+  title: Serva Encoder API
+  version: 1.3.0
+  description: |
+    High-performance file encoding API with AES-256-GCM encryption.
+
+    ## Quick Start for Frontend Developers
+
+    **Base URL (production):** All API requests use a single base URL. No need to switch between auth/backend hosts.
+
+    | Environment | Base URL |
+    |-------------|----------|
+    | **Production** | `https://serva.servamind.com` |
+
+    **Typical flows:**
+    1. **Login:** `POST /auth/google/callback` with Google ID token → session cookie set automatically
+    2. **Encode:** `POST /api/encode` → `POST /api/stream/{file_reference}` → `GET /download/{file_id}`
+    3. **Decode:** `POST /api/decode` (JSON) → `POST /api/decode` (binary + X-Streaming-Token) → `GET /download/{file_id}`
+
+    **Note:** The decode stream uses the **same path** `POST /api/decode`. When `X-Streaming-Token` is present, the request is routed to the backend. Do not use `/backend/decode` — that path does not exist in production.
+
+    ## Pricing Model
+
+    **Beta Period (Until May 4, 2026):**
+    - First 1TB/month: FREE
+    - Over 1TB: $0.005/GB (billed, NOT blocked)
+
+    **Post-Beta (After May 4, 2026):**
+    - All usage: $0.005/GB (no free tier)
+
+    **Important:** Users are NEVER blocked from encoding. Quota tracking
+    is for billing only. Beta users can encode beyond 1TB and pay for overage.
+
+    ## Authentication
+
+    Protected endpoints support two authentication methods:
+
+    ### 1. httpOnly Session Cookie (Web UI)
+
+    The primary authentication for the web frontend. On successful Google OAuth login,
+    the Auth Service sets a `session` httpOnly cookie (never exposed to JavaScript).
+    All subsequent requests from the browser automatically include this cookie.
+
+    ### 2. Authorization Header (Programmatic Access)
+
+    For API keys and legacy token usage, send `Authorization: Bearer <token>`:
+
+    | Type | Format | TTL | Notes |
+    |------|--------|-----|-------|
+    | **Session Token** | `sess_...` | 24 hours | Also available via httpOnly cookie. |
+    | **Google ID Token** | JWT (3 base64 segments) | ~1 hour | Validated against Google tokeninfo API on every request. |
+    | **Service API Key** | `sk_live_...` | Never (until revoked) | For programmatic / server-to-server access. |
+
+    Authentication priority: httpOnly cookie is checked first, then Authorization header.
+
+    **Recommended login flow (Web UI):**
+    1. Call `POST /auth/google/callback` with the Google ID token.
+    2. The server sets a `session` httpOnly cookie automatically.
+    3. All subsequent requests include the cookie automatically (no manual token management).
+    4. On logout, call `POST /auth/logout` to revoke the token and delete the cookie.
+
+    **Recommended flow (Programmatic / API Key):**
+    1. Generate a Service API Key via `POST /keys`.
+    2. Send `Authorization: Bearer <sk_live_...>` on all requests.
+
+    ## Encode Flow
+    ```
+    POST /api/encode  (Auth Service)  →  returns { streaming_token, file_id, download_url }
+    POST /api/stream/{file_reference}  (Backend, X-Streaming-Token header)  →  raw file bytes
+    GET  /download/{file_id}  (Backend)  →  .serva binary
+    ```
+
+    ## Decode Flow
+    ```
+    POST /api/decode  (Auth Service)  →  returns { streaming_token, file_reference }
+    POST /api/decode  (Backend, X-Streaming-Token + X-Decode-Password headers)  →  raw .serva bytes
+    GET  /download/{file_id}  (Backend)  →  original file binary
+    ```
+
+    **Decode password handling:** Send `user_password` in the Auth Service request body,
+    then the same value in `X-Decode-Password` when streaming to the Backend. Never stored
+    in Redis or any persistent storage.
+
+  x-readme:
+    samples-languages:
+      - curl
+      - javascript
+      - python
+
+servers:
+  - url: https://serva.servamind.com
+    description: Production (single base URL for all endpoints — auth, encode, decode, download)
+
+x-rate-limits:
+  note: "All endpoints are rate-limited. On 429, check the Retry-After header."
+  endpoints:
+    - path: "POST /auth/google/callback"
+      limit: "10/min"
+      scope: "Per IP"
+    - path: "POST /keys, GET /keys, DELETE /keys/{id}"
+      limit: "10-30/min"
+      scope: "Per user"
+    - path: "POST /api/encode, POST /api/decode"
+      limit: "20/min"
+      scope: "Per user"
+    - path: "POST /api/stream/{ref}"
+      limit: "20/min"
+      scope: "Per IP"
+    - path: "GET /download/{id}"
+      limit: "30/min"
+      scope: "Per IP"
+
+x-cors:
+  allowedOrigins: ["https://serva.servamind.com"]
+  allowedMethods: ["GET", "POST", "DELETE", "OPTIONS"]
+  allowedHeaders:
+    ["Authorization", "Content-Type", "X-Streaming-Token", "X-Decode-Password"]
+  credentials: true
+
+x-frontend-endpoints:
+  - "POST /auth/google/callback"
+  - "GET /auth/me"
+  - "POST /auth/logout"
+  - "POST /api/encode"
+  - "POST /api/stream/{file_reference}"
+  - "POST /api/decode (initiate + stream)"
+  - "GET /download/{file_id}"
+  - "GET /api/usage"
+  - "GET /keys"
+  - "POST /keys"
+  - "DELETE /keys/{key_id}"
+
+tags:
+  - name: Authentication
+    description: Google OAuth login, session management, and logout
+  - name: API Keys
+    description: Generate, list, and revoke Service API Keys
+  - name: Usage
+    description: Monthly usage, quota, and billing information
+  - name: Encode
+    description: File encoding pipeline — Auth orchestration and Backend streaming
+  - name: Decode
+    description: File decoding pipeline — Auth orchestration and Backend streaming
+  - name: Download
+    description: Retrieve encoded or decoded files
+  - name: Statistics
+    description: Public platform-wide aggregate statistics
+  - name: Billing
+    description: Stripe subscription webhook handler (server-to-server only — do not call from frontend)
+    x-internal: true
+  - name: Health
+    description: Service health checks
+  - name: Internal
+    description: Service-to-service endpoints (not exposed via nginx — frontend should not use)
+    x-internal: true
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Accepts one of three credential types (detected by format):
+        - **Session token** (`sess_...`) — O(1) Redis lookup, 24h TTL. Preferred.
+        - **Google ID Token** (JWT — three `.`-separated base64 segments) — calls Google tokeninfo API per request.
+        - **Service API Key** (`sk_live_...`) — HMAC-SHA256 constant-time validation, never expires unless revoked.
+
+        **Note:** The web UI authenticates via a `session` httpOnly cookie (set during login).
+        The cookie is checked first; the Authorization header is the fallback for programmatic clients.
+
+    StreamingToken:
+      type: apiKey
+      in: header
+      name: X-Streaming-Token
+      description: |
+        Single-use token with 300s TTL. Issued by the Auth Service encode/decode endpoints.
+        Deleted from Redis on first consumption. Bound to `file_reference` + `user_id`.
+
+    DecodePassword:
+      type: apiKey
+      in: header
+      name: X-Decode-Password
+      description: |
+        The decryption password sent directly from the browser to the backend over TLS.
+        Never stored in Redis or any persistent storage. Max length: 1024 characters.
+
+    StripeSignature:
+      type: apiKey
+      in: header
+      name: Stripe-Signature
+      description: HMAC-SHA256 signature set automatically by Stripe. Validated against `STRIPE_WEBHOOK_SECRET`.
+
+    ServiceAuth:
+      type: apiKey
+      in: header
+      name: X-Service-Auth
+      description: |
+        HMAC-SHA256 service-to-service authentication.
+        Used for internal endpoints not exposed via nginx.
+
+  headers:
+    X-API-Version:
+      description: |
+        API version that handled the request. Present on **every** response from both services.
+        Configurable via `API_VERSION` environment variable (default: `1.2`).
+      schema:
+        type: string
+        example: "1.3"
+
+  schemas:
+    # ── Auth ──────────────────────────────────────────────────────────────────
+
+    GoogleAuthRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          description: Google OAuth ID token (JWT) obtained from Google Sign-In.
+          example: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjFlOWdkazcifQ..."
+
+    UserResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        plan_type:
+          type: string
+          description: Current subscription plan. One of `free` or `premium`.
+          enum: [free, premium]
+          example: "free"
+        subscription_status:
+          type: string
+          description: |
+            Stripe subscription status. One of `active`, `canceled`, `past_due`, or `none`.
+          example: "none"
+        beta_tier_active:
+          type: boolean
+          example: true
+        beta_enrolled_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-11-01T00:00:00Z"
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-11-01T00:00:00Z"
+
+    # ── API Keys ──────────────────────────────────────────────────────────────
+
+    ApiKeyCreateResponse:
+      type: object
+      properties:
+        key_id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174001"
+        key_prefix:
+          type: string
+          description: First 12 characters of the raw key (display only, non-sensitive).
+          example: "sk_live_ab12"
+        raw_key:
+          type: string
+          description: |
+            Full Service API Key. **Shown ONCE — never returned again.**
+            Store this value securely immediately.
+          example: "sk_live_a1b2c3d4e5f6..."
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-11-01T00:00:00Z"
+
+    ApiKeyInfo:
+      type: object
+      properties:
+        key_id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174001"
+        key_prefix:
+          type: string
+          example: "sk_live_ab12"
+        revoked:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-11-01T00:00:00Z"
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-11-15T10:30:00Z"
+
+    # ── Usage ─────────────────────────────────────────────────────────────────
+
+    UsageResponse:
+      type: object
+      description: Current monthly usage, quota, and billing information
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        beta_tier_active:
+          type: boolean
+          description: |
+            If true: First 1TB/month free, overage billed at $0.005/GB (NOT blocked).
+            If false: All usage billed at $0.005/GB (post-beta).
+          example: true
+        beta_expiry_date:
+          type: string
+          format: date-time
+          example: "2026-05-04T00:00:00Z"
+        usage_this_month_bytes:
+          type: integer
+          format: int64
+          example: 536870912
+        quota_limit_bytes:
+          type: integer
+          format: int64
+          nullable: true
+          description: |
+            Monthly quota limit in bytes.
+
+            - Beta users (beta_tier_active = true): 1,099,511,627,776 (1 TB)
+            - Post-beta users (beta_tier_active = false): null (unlimited, pay-as-you-go)
+
+            **Important:** Users are NEVER blocked at quota limit.
+            Beta users can encode beyond 1TB and will be billed for overage.
+          example: 1099511627776
+        quota_used_percent:
+          type: number
+          format: float
+          example: 0.000488
+        overage_bytes:
+          type: integer
+          format: int64
+          description: |
+            Bytes over quota limit (for billing purposes).
+
+            - Beta users: max(0, usage - 1TB) — billed at $0.005/GB
+            - Post-beta users: all usage — billed at $0.005/GB
+
+            Users are NOT blocked when overage > 0. This is for billing only.
+          example: 0
+        overage_charges:
+          type: number
+          format: float
+          description: |
+            USD charges at $0.005/GB for overage.
+            Beta users: charged for bytes over 1TB.
+            Post-beta users: charged for all usage.
+          example: 0.00
+        total_lifetime_tb_encoded:
+          type: number
+          format: float
+          example: 0.5
+        estimated_savings_bytes:
+          type: integer
+          format: int64
+          example: 134217728
+        quota_resets_at:
+          type: string
+          format: date-time
+          example: "2026-03-01T00:00:00Z"
+
+    QuotaResponse:
+      type: object
+      description: Deprecated quota format. Use UsageResponse from GET /api/usage instead.
+      properties:
+        plan_type:
+          type: string
+          enum: [free, premium]
+          example: "free"
+        total_bytes_this_month:
+          type: integer
+          format: int64
+          example: 536870912
+        quota_bytes:
+          type: integer
+          format: int64
+          nullable: true
+          example: 1099511627776
+        quota_remaining_bytes:
+          type: integer
+          format: int64
+          nullable: true
+          example: 563165020864
+        percentage_used:
+          type: number
+          format: float
+          nullable: true
+          example: 0.049
+
+    # ── Encode ────────────────────────────────────────────────────────────────
+
+    EncodeRequest:
+      type: object
+      required:
+        - idempotency_key
+        - file_reference
+        - file_size_bytes
+        - user_password
+      properties:
+        idempotency_key:
+          type: string
+          pattern: "^[0-9a-f-]{36}$"
+          description: |
+            UUID v4. Prevents duplicate encoding within a 10-minute window, scoped per user.
+            Generate a new key for each unique encode attempt.
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        file_reference:
+          type: string
+          pattern: "^[0-9a-f-]{36}$"
+          description: UUID v4. Unique identifier for this file. Used to bind the streaming token.
+          example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        file_size_bytes:
+          type: integer
+          format: int64
+          minimum: 1
+          description: |
+            Declared file size in bytes. The backend validates that actual bytes received
+            match this value exactly before encrypting (prevents quota manipulation).
+          example: 10485760
+        file_extension:
+          type: string
+          maxLength: 10
+          default: ""
+          description: Original file extension (e.g. `.pdf`). Used for platform statistics only.
+          example: ".pdf"
+        original_filename:
+          type: string
+          maxLength: 512
+          default: ""
+          description: Original filename. Embedded in the `.serva` header for recovery on decode.
+          example: "report.pdf"
+        user_password:
+          type: string
+          minLength: 1
+          maxLength: 1024
+          description: |
+            Encryption password. **Ephemeral — never logged, stored in DB, or inspected.**
+            Forwarded opaquely to the backend; cleared from memory after encryption.
+          example: "my-secure-password"
+
+    EncodeResponse:
+      type: object
+      properties:
+        file_id:
+          type: string
+          format: uuid
+          example: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+        download_url:
+          type: string
+          description: Relative path to retrieve the encoded file after streaming completes.
+          example: "/download/7c9e6679-7425-40de-944b-e07fc1f90ae7"
+        streaming_token:
+          type: string
+          description: |
+            Single-use token. **Use immediately** — POST it to `/api/stream/{file_reference}`
+            on the Backend via the `X-Streaming-Token` header. Expires in 300 seconds.
+          example: "K3mL9pQs7vW2xR4t..."
+
+    StreamCompleteResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "complete"
+        file_id:
+          type: string
+          format: uuid
+          example: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+        original_size_bytes:
+          type: integer
+          format: int64
+          description: Size of the raw input file in bytes.
+          example: 10485760
+        encoded_size_bytes:
+          type: integer
+          format: int64
+          description: Size of the encoded (pre-encryption) data in bytes.
+          example: 8388608
+        file_size_bytes:
+          type: integer
+          format: int64
+          description: Size of the final encrypted `.serva` file in bytes.
+          example: 8388640
+
+    # ── Decode ────────────────────────────────────────────────────────────────
+
+    DecodeRequest:
+      type: object
+      required:
+        - file_reference
+        - file_size_bytes
+        - user_password
+      properties:
+        file_reference:
+          type: string
+          pattern: "^[0-9a-f-]{36}$"
+          description: UUID v4. Unique identifier for this decode operation.
+          example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        file_size_bytes:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Size of the `.serva` file in bytes. Validated by backend before decryption.
+          example: 8388640
+        user_password:
+          type: string
+          minLength: 1
+          maxLength: 1024
+          description: Ephemeral password. Client must send the same value in X-Decode-Password when streaming to Backend. Never logged or stored.
+
+    DecodeResponse:
+      type: object
+      description: Returned by the Auth Service. Use `streaming_token` to call the Backend decode endpoint.
+      properties:
+        streaming_token:
+          type: string
+          description: |
+            Single-use token. **Use immediately** — POST it to `/api/decode` on the Backend
+            via the `X-Streaming-Token` header. Expires in 300 seconds.
+          example: "N7pR2sT5wX8yZ1q..."
+        file_reference:
+          type: string
+          format: uuid
+          example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+
+    DecodeCompleteResponse:
+      type: object
+      description: Returned by the Backend after successful decryption and decoding.
+      properties:
+        file_id:
+          type: string
+          format: uuid
+          example: "a3f8b924-1c5d-4e7f-9012-bc3d4e5f6a7b"
+        original_filename:
+          type: string
+          description: Filename recovered from the `.serva` header.
+          example: "report.pdf"
+        file_size_bytes:
+          type: integer
+          format: int64
+          description: Size of the decoded file in bytes.
+          example: 10485760
+        download_url:
+          type: string
+          example: "/download/a3f8b924-1c5d-4e7f-9012-bc3d4e5f6a7b"
+
+    # ── Statistics ────────────────────────────────────────────────────────────
+
+    PlatformStatsResponse:
+      type: object
+      properties:
+        platform_total_input_bytes:
+          type: integer
+          format: int64
+          example: 1099511627776
+        platform_total_output_bytes:
+          type: integer
+          format: int64
+          example: 824633720832
+        platform_total_savings_bytes:
+          type: integer
+          format: int64
+          example: 274877906944
+        platform_average_compression_ratio:
+          type: number
+          format: float
+          example: 0.75
+        platform_total_files_encoded:
+          type: integer
+          example: 12345
+
+    ExtensionEntry:
+      type: object
+      properties:
+        extension:
+          type: string
+          example: ".pdf"
+        count:
+          type: integer
+          example: 4500
+        percent_of_total:
+          type: number
+          format: float
+          example: 36.45
+
+    ExtensionsResponse:
+      type: object
+      properties:
+        extensions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExtensionEntry"
+        total_files_encoded:
+          type: integer
+          example: 12345
+
+    # ── Health ────────────────────────────────────────────────────────────────
+
+    AuthHealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "healthy"
+        service:
+          type: string
+          example: "auth"
+
+    BackendHealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "healthy"
+        service:
+          type: string
+          example: "backend"
+        active_jobs:
+          type: integer
+          description: Number of encode jobs currently in progress.
+          example: 3
+        encoded_files:
+          type: integer
+          description: Number of encoded files currently in `/tmp/encoded/` awaiting download.
+          example: 12
+
+    # ── Errors ────────────────────────────────────────────────────────────────
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message.
+          example: "Invalid or expired session token"
+
+    DuplicateRequestError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "duplicate_request"
+        message:
+          type: string
+          example: "This file is already being encoded. Please wait."
+        status:
+          type: string
+          example: "processing"
+        original_request_id:
+          type: string
+          format: uuid
+          nullable: true
+
+    ByteCountMismatchError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "byte_count_mismatch"
+        declared:
+          type: integer
+          format: int64
+          description: Byte count declared in the streaming token.
+          example: 10485760
+        received:
+          type: integer
+          format: int64
+          description: Actual byte count received.
+          example: 10485700
+
+# =============================================================================
+# Paths
+# =============================================================================
+
+paths:
+  # ── Authentication ──────────────────────────────────────────────────────────
+
+  /auth/google/callback:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    post:
+      tags: [Authentication]
+      summary: Google OAuth login
+      operationId: googleOAuthCallback
+      description: |
+        Exchanges a Google ID token for a user profile and sets an **httpOnly session cookie**.
+        Auto-creates user accounts on first login.
+
+        The session token is set as an httpOnly `session` cookie — it is **not** returned in the
+        response body. The browser sends it automatically on subsequent requests.
+        The cookie expires after **24 hours** (configurable via `SESSION_TOKEN_TTL_SECONDS`).
+
+        Upon expiry, re-authenticate via Google and call this endpoint again.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleAuthRequest"
+            example:
+              token: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjFlOWdkazcifQ..."
+      responses:
+        "200":
+          description: |
+            Login successful. Session token is set as an httpOnly `session` cookie.
+            The response body contains the user profile (no token in body).
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: |
+                Sets `session=sess_...` as an httpOnly, Secure, SameSite=Strict cookie.
+                This cookie is sent automatically on all subsequent requests.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+              example:
+                user_id: "123e4567-e89b-12d3-a456-426614174000"
+                email: "user@example.com"
+                plan_type: "free"
+                subscription_status: "none"
+                beta_tier_active: true
+                beta_enrolled_at: "2025-11-01T00:00:00Z"
+                created_at: "2025-11-01T00:00:00Z"
+        "401":
+          description: Invalid/expired Google token, or unverified email.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (10 req/min per IP). See `Retry-After` header.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    get:
+      tags: [Authentication]
+      summary: Get current user profile
+      operationId: getCurrentUser
+      description: |
+        Returns the currently authenticated user's profile from the session cookie.
+        Used by the frontend to restore sessions on page reload.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current user profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: No valid session cookie or authorization header.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    post:
+      tags: [Authentication]
+      summary: Logout — revoke session and delete cookie
+      operationId: logout
+      description: |
+        Revokes the current session token by deleting it from Redis, and deletes
+        the `session` httpOnly cookie from the browser.
+
+        Only affects session-based authentication. **No-op** if called with a
+        Google ID token or Service API Key — those credential types have their own
+        expiry/revocation mechanisms (`DELETE /keys/{key_id}` for API keys).
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Session token revoked and cookie deleted.
+        "401":
+          description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── API Keys ────────────────────────────────────────────────────────────────
+
+  /keys:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    post:
+      tags: [API Keys]
+      summary: Generate API key
+      operationId: generateApiKey
+      description: |
+        Generates a new Service API Key for programmatic access.
+
+        The `raw_key` is returned **once only** and never stored. Only the HMAC-SHA256 hash
+        is persisted in the database. Store the key immediately and securely.
+      security:
+        - BearerAuth: []
+      responses:
+        "201":
+          description: API key created. Store `raw_key` immediately — it will not be shown again.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyCreateResponse"
+        "401":
+          description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (10 req/min per user). See `Retry-After` header.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      tags: [API Keys]
+      summary: List API keys
+      operationId: listApiKeys
+      description: |
+        Lists all API keys for the authenticated user, ordered by creation date descending.
+        Raw keys are **never** returned after initial creation.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Array of API key metadata.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKeyInfo"
+        "401":
+          description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (30 req/min per user). See `Retry-After` header.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /keys/{key_id}:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    delete:
+      tags: [API Keys]
+      summary: Revoke API key
+      operationId: revokeApiKey
+      description: |
+        Permanently revokes an API key. The key is marked as revoked in the database
+        and immediately invalidated in Redis cache. Cannot be undone.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: key_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the API key to revoke. Must belong to the authenticated user.
+      responses:
+        "204":
+          description: Key revoked successfully.
+        "401":
+          description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Key not found or does not belong to the authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (20 req/min per user). See `Retry-After` header.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Usage ───────────────────────────────────────────────────────────────────
+
+  /quota/:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    get:
+      tags: [Usage]
+      summary: Get quota information (DEPRECATED)
+      deprecated: true
+      operationId: getQuota
+      description: |
+        **DEPRECATED:** Use GET /api/usage instead.
+
+        This endpoint uses plan_type for quota calculation, which doesn't
+        match the beta tier pricing model. The /api/usage endpoint uses
+        beta_tier_active (source of truth) and provides detailed billing info.
+
+        Kept for backwards compatibility only. Will be removed in a future version.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Quota information (deprecated format)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotaResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/usage:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    get:
+      tags: [Usage]
+      summary: Get usage and quota
+      operationId: getUsage
+      description: |
+        Returns monthly usage, quota, and billing information.
+
+        **Replaces deprecated /quota endpoint.**
+
+        Uses beta_tier_active as source of truth for quota logic.
+        Cached in Redis for 30 seconds. Invalidated after each encode.
+
+        **Beta users (beta_tier_active = true):**
+        - quota_limit_bytes: 1,099,511,627,776 (1 TB)
+        - First 1TB free, overage billed at $0.005/GB
+        - Users can encode beyond quota (NOT blocked)
+
+        **Post-beta users (beta_tier_active = false):**
+        - quota_limit_bytes: null (no quota enforcement)
+        - All usage billed at $0.005/GB
+
+        **Important:** Encoding is NEVER blocked. Quota is for billing only.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Usage information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageResponse"
+              examples:
+                beta_under_quota:
+                  value:
+                    user_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                    beta_tier_active: true
+                    beta_expiry_date: "2026-05-04T00:00:00Z"
+                    usage_this_month_bytes: 536870912
+                    quota_limit_bytes: 1099511627776
+                    quota_used_percent: 0.000488
+                    overage_bytes: 0
+                    overage_charges: 0.00
+                    total_lifetime_tb_encoded: 0.5
+                    estimated_savings_bytes: 134217728
+                    quota_resets_at: "2026-03-01T00:00:00Z"
+                premium_user:
+                  value:
+                    user_id: "b2c3d4e5-f678-9012-bcde-f456789abcde"
+                    beta_tier_active: false
+                    beta_expiry_date: "2026-05-04T00:00:00Z"
+                    usage_this_month_bytes: 2199023255552
+                    quota_limit_bytes: null
+                    quota_used_percent: 0.0
+                    overage_bytes: 0
+                    overage_charges: 0.00
+                    total_lifetime_tb_encoded: 12.3
+                    estimated_savings_bytes: 549755813888
+                    quota_resets_at: "2026-03-01T00:00:00Z"
+                post_beta_user:
+                  value:
+                    user_id: "c3d4e5f6-a789-0123-cdef-456789abcdef"
+                    beta_tier_active: false
+                    beta_expiry_date: "2026-05-04T00:00:00Z"
+                    usage_this_month_bytes: 536870912
+                    quota_limit_bytes: null
+                    quota_used_percent: 0.0
+                    overage_bytes: 536870912
+                    overage_charges: 2.50
+                    total_lifetime_tb_encoded: 5.8
+                    estimated_savings_bytes: 1073741824
+                    quota_resets_at: "2026-03-01T00:00:00Z"
+        "401":
+          description: Invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Encode ──────────────────────────────────────────────────────────────────
+
+  /api/encode:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    post:
+      tags: [Encode]
+      summary: Initiate file encoding (Auth Service)
+      operationId: initiateEncode
+      description: |
+        **Step 1 of 3 in the encode flow.**
+
+        Validates usage quota, generates streaming token, forwards job to backend.
+
+        **Quota tracking (NOT blocking):**
+        - Beta users: Usage tracked, first 1TB free, overage billed
+        - Post-beta users: All usage tracked and billed
+        - **IMPORTANT:** Users are NEVER blocked at quota limit
+        - Quota is reserved atomically, rolled back if stream fails
+
+        **Automatic quota rollback on failure:**
+        - Invalid streaming token → rollback
+        - Wrong operation type → rollback
+        - Upload disconnect → rollback
+        - Encoding error → rollback
+        - Byte count mismatch → rollback
+
+        After receiving response, immediately call POST /api/stream/{file_reference}
+        on Backend with X-Streaming-Token header. Token expires in 300 seconds.
+
+        `user_password` is forwarded opaquely — never logged, stored in DB, or inspected here.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EncodeRequest"
+            example:
+              idempotency_key: "550e8400-e29b-41d4-a716-446655440000"
+              file_reference: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+              file_size_bytes: 10485760
+              file_extension: ".pdf"
+              original_filename: "report.pdf"
+              user_password: "my-secure-password"
+      responses:
+        "200":
+          description: Encode job initiated. Use `streaming_token` immediately for file upload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EncodeResponse"
+              example:
+                file_id: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                download_url: "/download/7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                streaming_token: "K3mL9pQs7vW2xR4t..."
+        "400":
+          description: Validation error (e.g. invalid file size).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Idempotency key already processing (duplicate request).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DuplicateRequestError"
+        "410":
+          description: File already downloaded. Generate a new `idempotency_key` to re-encode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (20 req/min per user). See Retry-After header.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Backend service is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/stream/{file_reference}:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    post:
+      tags: [Encode]
+      summary: Stream file for encoding (Backend)
+      operationId: streamFileForEncoding
+      description: |
+        **Step 2 of 3 in the encode flow.**
+
+        Receives the raw file stream from the browser, runs the Serva encoding algorithm,
+        encrypts with AES-256-GCM using the password from the streaming token, and stores
+        the result at `/tmp/encoded/{file_id}.serva`.
+
+        Called immediately after `POST /api/encode` on the Auth Service, using the returned
+        `streaming_token` in the `X-Streaming-Token` header.
+
+        **Security features:**
+        - Streaming token is single-use (atomic GET+DELETE via Lua script)
+        - Operation type validated (must be "encode", not "decode")
+        - Byte count validated (received must match declared)
+        - Quota automatically rolled back on any failure
+        - Token deleted from Redis on first consumption
+        - `user_password` held transiently in memory, cleared after encryption
+      security:
+        - StreamingToken: []
+      parameters:
+        - name: file_reference
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Must match the `file_reference` bound to the streaming token.
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+              description: Raw file bytes. Streamed directly — no multipart wrapper.
+      responses:
+        "200":
+          description: Encoding complete. Proceed to `GET /download/{file_id}`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StreamCompleteResponse"
+        "400":
+          description: Empty file received, or byte count mismatch (received ≠ declared).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ErrorResponse"
+                  - $ref: "#/components/schemas/ByteCountMismatchError"
+        "401":
+          description: Streaming token invalid, expired, or already consumed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "408":
+          description: Browser disconnected during upload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Encoding or encryption failure.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (20 req/min per IP). See `Retry-After` header.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "501":
+          description: Unsupported file type for encoding.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Decode ──────────────────────────────────────────────────────────────────
+
+  /api/decode:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    post:
+      tags: [Decode]
+      summary: Initiate file decoding (Auth Service)
+      operationId: initiateDecode
+      description: |
+        **Step 1 of 3 in the decode flow.**
+
+        Validates credentials and creates a decode streaming token (stored in Redis, TTL 300s).
+        Returns the token to the browser.
+
+        **After receiving the response**, immediately call `POST /api/decode` on the **Backend**
+        with:
+        - `X-Streaming-Token: <streaming_token>` header
+        - `X-Decode-Password: <user_password>` header (same value as in request body)
+        - Raw `.serva` bytes as the request body
+
+        The `user_password` is required in the request body for validation. Send the same
+        value in `X-Decode-Password` when streaming to the Backend. It is never stored in
+        Redis or any persistent storage.
+
+        Decoding is **free** — no quota check performed.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecodeRequest"
+            example:
+              file_reference: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+              file_size_bytes: 8388640
+              user_password: "my-secure-password"
+      responses:
+        "200":
+          description: Decode token issued. Use `streaming_token` immediately for file upload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecodeResponse"
+              example:
+                streaming_token: "N7pR2sT5wX8yZ1q..."
+                file_reference: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        "401":
+          description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (20 req/min per user). See `Retry-After` header.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Redis error while creating streaming token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /backend/decode:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production (use path /api/decode — same as initiate)
+    post:
+      tags: [Decode]
+      summary: Stream .serva file for decoding (Backend)
+      operationId: streamFileForDecoding
+      description: |
+        **Step 2 of 3 in the decode flow.**
+
+        **IMPORTANT FOR FRONTEND:** In production and when using nginx, use **`POST /api/decode`** (the same path as the initiate step). The server routes to the backend when `X-Streaming-Token` is present. The path `/backend/decode` does not exist in production — it is only used for direct backend access during development.
+
+        Receives the `.serva` file stream from the browser. Validates the streaming token,
+        decrypts with AES-256-GCM using the password from the `X-Decode-Password` header,
+        Serva-decodes back to the original format, and stores the result at `/tmp/decoded/{file_id}`.
+
+        Called immediately after `POST /api/decode` on the Auth Service, using the returned
+        `streaming_token` in the `X-Streaming-Token` header. The password is sent via the
+        `X-Decode-Password` header — it is **never** stored in Redis.
+
+        **Security features:**
+        - Streaming token is single-use (atomic GET+DELETE via Lua script)
+        - Operation type validated (must be "decode", not "encode")
+        - Password max length enforced (1024 chars, prevents OOM)
+        - Password sent via header (never stored in Redis or logs)
+        - Byte count validated before decryption
+        - Quota rolled back if wrong token type used (encode token on decode endpoint)
+
+        **Size limit:** Maximum `.serva` file size for decode is configurable (default 10 GiB). In-memory decryption constraint.
+      security:
+        - StreamingToken: []
+        - DecodePassword: []
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+              description: Raw `.serva` file bytes. Streamed directly — no multipart wrapper.
+      responses:
+        "200":
+          description: Decoding complete. Proceed to `GET /download/{file_id}`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecodeCompleteResponse"
+        "400":
+          description: |
+            Empty file, byte count mismatch, invalid `.serva` file structure,
+            password exceeds max length (1024 chars), or streaming token is not for a decode operation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: |
+            Invalid/expired/already-used streaming token,
+            or incorrect password (AES-256-GCM `InvalidTag` — wrong password or corrupted file).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "408":
+          description: Browser disconnected during upload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "413":
+          description: |
+            File size exceeds the maximum supported for decode (configurable, default 10 GiB).
+            This limit applies because AES-256-GCM decryption requires the full ciphertext in memory.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Decryption or decoding failure.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Download ────────────────────────────────────────────────────────────────
+
+  /download/{file_id}:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    get:
+      tags: [Download]
+      summary: Download encoded or decoded file
+      operationId: downloadFile
+      description: |
+        **Step 3 of 3 in both encode and decode flows.**
+
+        Downloads the result file. File is deleted immediately after download.
+
+        **Security:** Authentication required. User must own the file.
+
+        Ownership verification:
+        - Encoded files: Checked via job.user_id
+        - Decoded files: Checked via .meta file
+
+        Lookup order:
+        1. /tmp/encoded/{file_id}.serva (encode result)
+        2. /tmp/decoded/{file_id} (decode result)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: File ID returned by the stream or decode endpoint.
+        - name: filename
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 512
+          description: Override download filename (sanitized for security).
+          example: "report.serva"
+      responses:
+        "200":
+          description: File binary (deleted after this response).
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: "application/octet-stream"
+            Content-Length:
+              schema:
+                type: integer
+            X-File-Id:
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: |
+            Forbidden - File does not belong to authenticated user.
+            Ownership is verified before serving file.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                not_owner:
+                  value:
+                    detail: "Access denied: You do not own this file"
+                metadata_missing:
+                  value:
+                    detail: "Access denied: File metadata missing"
+        "404":
+          description: File not found — already downloaded, expired, or never existed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Encoding not yet complete. Retry after a short delay.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (30 req/min per IP). See `Retry-After` header.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Internal (service-to-service, not exposed via nginx) ────────────────────
+
+  /internal/quota/rollback:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    post:
+      tags: [Internal]
+      summary: Rollback quota reservation (internal only)
+      operationId: rollbackQuota
+      description: |
+        **Internal service-to-service endpoint.**
+
+        Called by backend when encode stream fails to release reserved quota.
+        Not exposed via nginx. Only accessible on internal Docker network.
+
+        Requires X-Service-Auth header with HMAC-SHA256 service secret.
+
+        **Called when:**
+        - Stream upload fails (disconnect, byte mismatch)
+        - Wrong operation type (decode token on encode stream)
+        - Encoding/encryption errors
+      security:
+        - ServiceAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - file_size_bytes
+              properties:
+                user_id:
+                  type: string
+                  format: uuid
+                file_size_bytes:
+                  type: integer
+                  minimum: 1
+      responses:
+        "200":
+          description: Quota rolled back successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "rolled_back"
+                  bytes_released:
+                    type: integer
+                    example: 1048576
+        "403":
+          description: Invalid service authentication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Billing ─────────────────────────────────────────────────────────────────
+
+  /api/stripe/webhook:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    post:
+      tags: [Billing]
+      summary: Stripe webhook handler
+      operationId: stripeWebhook
+      description: |
+        Handles Stripe subscription lifecycle events. **Do not call directly.**
+
+        Verifies the `Stripe-Signature` header against `STRIPE_WEBHOOK_SECRET`. All plan changes
+        are written to the audit log and invalidate the Redis plan cache immediately.
+
+        | Event | Effect |
+        |-------|--------|
+        | `customer.subscription.created` | `plan_type → premium`, `subscription_status → active` |
+        | `customer.subscription.deleted` | `plan_type → free`, `subscription_status → canceled` |
+        | `invoice.payment_failed` | `subscription_status → past_due` |
+      security:
+        - StripeSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Raw Stripe event JSON payload.
+      responses:
+        "200":
+          description: Event received and processed.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+        "400":
+          description: Invalid Stripe webhook signature.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Statistics ──────────────────────────────────────────────────────────────
+
+  /api/stats/public:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    get:
+      tags: [Statistics]
+      summary: Platform aggregate statistics
+      operationId: getPublicStats
+      description: Platform-wide aggregate statistics. No authentication required. Used for the public landing page.
+      security: []
+      responses:
+        "200":
+          description: Platform statistics.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformStatsResponse"
+        "500":
+          description: Failed to retrieve statistics.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/stats/extensions:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    get:
+      tags: [Statistics]
+      summary: File extension frequencies
+      operationId: getExtensionStats
+      description: All file extension frequencies, sorted by count descending. No authentication required.
+      security: []
+      responses:
+        "200":
+          description: Extension frequency data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtensionsResponse"
+        "500":
+          description: Failed to retrieve statistics.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Health ──────────────────────────────────────────────────────────────────
+
+  /health:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    get:
+      tags: [Health]
+      summary: Auth Service health check
+      operationId: authHealth
+      description: Returns service status. Used by Docker health checks and load balancers.
+      security: []
+      responses:
+        "200":
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthHealthResponse"
+
+  /backend/health:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production (path is /backend/health)
+    get:
+      tags: [Health]
+      summary: Backend health check
+      operationId: backendHealth
+      description: |
+        Returns service status including active encode jobs and files awaiting download.
+
+        > **Note:** This path is documented as `/backend/health` to avoid an OpenAPI path
+        > collision with `GET /health` on the Auth Service. In production, use `GET /backend/health`.
+      security: []
+      responses:
+        "200":
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackendHealthResponse"

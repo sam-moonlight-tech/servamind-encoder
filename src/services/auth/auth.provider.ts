@@ -2,6 +2,7 @@ import type { AuthUser } from "@/types/domain.types";
 
 export interface SignInCredentials {
   googleToken?: string;
+  emailToken?: string;
   username?: string;
   password?: string;
 }

@@ -12,21 +12,18 @@ export interface EncoderService {
   encodeInit(payload: EncodeInitPayload): Promise<EncodeInitResponse>;
   encodeStream(fileRef: string, data: ArrayBuffer, token: string): Promise<EncodeStreamResponse>;
   decodeInit(payload: DecodeInitPayload): Promise<DecodeInitResponse>;
-  decodeStream(data: ArrayBuffer, token: string): Promise<DecodeStreamResponse>;
+  decodeStream(data: ArrayBuffer, token: string, password: string): Promise<DecodeStreamResponse>;
   download(fileId: string, filename?: string): Promise<Response>;
 }
 
-export function createEncoderService(
-  authClient: HttpClient,
-  backendClient: HttpClient
-): EncoderService {
+export function createEncoderService(client: HttpClient): EncoderService {
   return {
     encodeInit(payload) {
-      return authClient.post<EncodeInitResponse>("/api/encode", payload);
+      return client.post<EncodeInitResponse>("/api/encode", payload);
     },
 
     encodeStream(fileRef, data, token) {
-      return backendClient.postBinary<EncodeStreamResponse>(
+      return client.postBinary<EncodeStreamResponse>(
         `/api/stream/${fileRef}`,
         data,
         { "X-Streaming-Token": token }
@@ -34,14 +31,17 @@ export function createEncoderService(
     },
 
     decodeInit(payload) {
-      return authClient.post<DecodeInitResponse>("/api/decode", payload);
+      return client.post<DecodeInitResponse>("/api/decode", payload);
     },
 
-    decodeStream(data, token) {
-      return backendClient.postBinary<DecodeStreamResponse>(
+    decodeStream(data, token, password) {
+      return client.postBinary<DecodeStreamResponse>(
         "/api/decode",
         data,
-        { "X-Streaming-Token": token }
+        {
+          "X-Streaming-Token": token,
+          "X-Decode-Password": password,
+        }
       );
     },
 
@@ -49,7 +49,7 @@ export function createEncoderService(
       const path = filename
         ? `/download/${fileId}?filename=${encodeURIComponent(filename)}`
         : `/download/${fileId}`;
-      return backendClient.getBlob(path);
+      return client.getBlob(path);
     },
   };
 }

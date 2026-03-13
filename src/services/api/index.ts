@@ -11,20 +11,15 @@ export function setAuthHeadersFn(fn: () => Record<string, string>) {
   authHeadersFn = fn;
 }
 
-const authClient = createHttpClient({
-  baseUrl: env.authApiUrl,
+const apiClient = createHttpClient({
+  baseUrl: env.apiUrl,
   getAuthHeaders: () => authHeadersFn?.() ?? {},
 });
 
-const backendClient = createHttpClient({
-  baseUrl: env.backendApiUrl,
-  getAuthHeaders: () => authHeadersFn?.() ?? {},
-});
-
-export const authService = createAuthService(authClient);
-export const encoderService = createEncoderService(authClient, backendClient);
-export const statsService = createStatsService(authClient, backendClient);
-export const healthService = createHealthService(authClient, backendClient);
+export const authService = createAuthService(apiClient);
+export const encoderService = createEncoderService(apiClient);
+export const statsService = createStatsService(apiClient);
+export const healthService = createHealthService(apiClient);
 
 export { ApiError } from "./errors";
 export type { AuthService } from "./auth.service";

@@ -1,8 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_AUTH_API_URL: string;
-  readonly VITE_BACKEND_API_URL: string;
+  readonly VITE_API_URL: string;
   readonly VITE_AUTH_PROVIDER: string;
   readonly VITE_ENABLE_GOOGLE_DRIVE_UPLOAD: string;
   readonly VITE_SHOW_GOOGLE_DRIVE_UPLOAD: string;

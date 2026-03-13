@@ -3,12 +3,12 @@ import { queryKeys } from "./keys";
 import { statsService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 
-export function useQuota() {
+export function useUsage() {
   const { isAuthenticated } = useAuth();
 
   return useQuery({
-    queryKey: queryKeys.quota,
-    queryFn: () => statsService.getQuota(),
+    queryKey: queryKeys.usage,
+    queryFn: () => statsService.getUsage(),
     enabled: isAuthenticated,
   });
 }

@@ -14,6 +14,7 @@ export function createHttpClient(config: HttpClientConfig) {
 
     const response = await fetch(`${config.baseUrl}${path}`, {
       ...options,
+      credentials: "include",
       headers: {
         ...authHeaders,
         ...options.headers,
@@ -75,6 +76,7 @@ export function createHttpClient(config: HttpClientConfig) {
 
     const response = await fetch(`${config.baseUrl}${path}`, {
       method: "GET",
+      credentials: "include",
       headers: { ...authHeaders },
     });
 

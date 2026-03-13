@@ -2,62 +2,77 @@ import { http, HttpResponse, delay } from "msw";
 import { env } from "@/config/env";
 import {
   mockGoogleCallbackResponse,
+  mockEmailSendLinkResponse,
+  mockEmailVerifyResponse,
   mockCreateApiKeyResponse,
   mockListApiKeysResponse,
   mockEncodeInitResponse,
   mockEncodeStreamResponse,
   mockDecodeInitResponse,
-  mockQuotaResponse,
+  mockUsageResponse,
   mockPublicStatsResponse,
   mockExtensionsStatsResponse,
   mockAuthHealthResponse,
   mockBackendHealthResponse,
 } from "./fixtures";
 
-const authUrl = env.authApiUrl;
-const backendUrl = env.backendApiUrl;
+const baseUrl = env.apiUrl;
 
 export const handlers = [
   // Auth
-  http.post(`${authUrl}/auth/google/callback`, () => {
+  http.post(`${baseUrl}/auth/google/callback`, () => {
     return HttpResponse.json(mockGoogleCallbackResponse);
   }),
 
-  http.post(`${authUrl}/auth/logout`, () => {
+  http.get(`${baseUrl}/auth/me`, () => {
+    return HttpResponse.json(mockGoogleCallbackResponse);
+  }),
+
+  http.post(`${baseUrl}/auth/email/send-link`, async () => {
+    await delay(500);
+    return HttpResponse.json(mockEmailSendLinkResponse);
+  }),
+
+  http.post(`${baseUrl}/auth/email/verify`, async () => {
+    await delay(300);
+    return HttpResponse.json(mockEmailVerifyResponse);
+  }),
+
+  http.post(`${baseUrl}/auth/logout`, () => {
     return new HttpResponse(null, { status: 204 });
   }),
 
   // API Keys
-  http.post(`${authUrl}/keys`, () => {
+  http.post(`${baseUrl}/keys`, () => {
     return HttpResponse.json(mockCreateApiKeyResponse);
   }),
 
-  http.get(`${authUrl}/keys`, () => {
+  http.get(`${baseUrl}/keys`, () => {
     return HttpResponse.json(mockListApiKeysResponse);
   }),
 
-  http.delete(`${authUrl}/keys/:keyId`, () => {
+  http.delete(`${baseUrl}/keys/:keyId`, () => {
     return new HttpResponse(null, { status: 204 });
   }),
 
-  // Encoding (init → auth, stream → backend)
-  http.post(`${authUrl}/api/encode`, async () => {
+  // Encoding
+  http.post(`${baseUrl}/api/encode`, async () => {
     await delay(500);
     return HttpResponse.json(mockEncodeInitResponse);
   }),
 
-  http.post(`${backendUrl}/api/stream/:fileRef`, async () => {
+  http.post(`${baseUrl}/api/stream/:fileRef`, async () => {
     await delay(1500);
     return HttpResponse.json(mockEncodeStreamResponse);
   }),
 
-  // Decoding (init → auth, stream → backend)
-  http.post(`${authUrl}/api/decode`, () => {
+  // Decoding
+  http.post(`${baseUrl}/api/decode`, () => {
     return HttpResponse.json(mockDecodeInitResponse);
   }),
 
-  // Download — return ~530 bytes to simulate ~47% compression of a ~1KB file
-  http.get(`${backendUrl}/download/:fileId`, async () => {
+  // Download
+  http.get(`${baseUrl}/download/:fileId`, async () => {
     await delay(300);
     const encodedBlob = new Uint8Array(530);
     crypto.getRandomValues(encodedBlob);
@@ -66,26 +81,26 @@ export const handlers = [
     });
   }),
 
-  // Quota
-  http.get(`${authUrl}/quota`, () => {
-    return HttpResponse.json(mockQuotaResponse);
+  // Usage
+  http.get(`${baseUrl}/api/usage`, () => {
+    return HttpResponse.json(mockUsageResponse);
   }),
 
   // Stats
-  http.get(`${backendUrl}/api/stats/public`, () => {
+  http.get(`${baseUrl}/api/stats/public`, () => {
     return HttpResponse.json(mockPublicStatsResponse);
   }),
 
-  http.get(`${backendUrl}/api/stats/extensions`, () => {
+  http.get(`${baseUrl}/api/stats/extensions`, () => {
     return HttpResponse.json(mockExtensionsStatsResponse);
   }),
 
   // Health
-  http.get(`${authUrl}/health`, () => {
+  http.get(`${baseUrl}/health`, () => {
     return HttpResponse.json(mockAuthHealthResponse);
   }),
 
-  http.get(`${backendUrl}/health`, () => {
+  http.get(`${baseUrl}/backend/health`, () => {
     return HttpResponse.json(mockBackendHealthResponse);
   }),
 ];

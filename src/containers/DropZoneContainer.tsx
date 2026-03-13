@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { UploadStageView, PrivateKeyModal } from "@/components/composed";
+import { UploadStageView, PrivateKeyModal, UsageLimitModal } from "@/components/composed";
 import { useDropZone } from "@/hooks/behavior";
 import { useFileValidation } from "@/hooks/behavior";
-import { useEncode, useDecode } from "@/hooks/data";
+import { useEncode, useDecode, useUsage } from "@/hooks/data";
 import { useWorkflow } from "@/contexts/WorkflowContext";
 import { getFileTypeLabel, formatFileSize, validateFileSize } from "@/services/file";
 import type { FileTableItem } from "@/types/domain.types";
@@ -19,11 +19,13 @@ function DropZoneContainer() {
   const [fileStatuses, setFileStatuses] = useState<Map<string, FileStatus>>(new Map());
   const [uploading, setUploading] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
+  const [showUsageLimitModal, setShowUsageLimitModal] = useState(false);
   const [encodingResults, setEncodingResults] = useState<Map<string, EncodingFileResult>>(new Map());
   const [encodingIndex, setEncodingIndex] = useState(0);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: encodeAsync } = useEncode();
   const { mutateAsync: decodeAsync } = useDecode();
+  const { data: usage } = useUsage();
   const { process, setStage, setProcess, setHasFile, addFileResult } = useWorkflow();
 
   const firstFile = files[0];
@@ -182,8 +184,30 @@ function DropZoneContainer() {
     [handleFileSelect]
   );
 
+  const totalUploadBytes = useMemo(
+    () => files.reduce((sum, f) => sum + f.size, 0),
+    [files]
+  );
+
+  const exceedsQuota = usage
+    && usage.quota_limit_bytes !== null
+    && usage.usage_this_month_bytes + totalUploadBytes > usage.quota_limit_bytes;
+
   const handleStart = useCallback(() => {
+    if (exceedsQuota) {
+      setShowUsageLimitModal(true);
+    } else {
+      setShowKeyModal(true);
+    }
+  }, [exceedsQuota]);
+
+  const handleUsageLimitContinue = useCallback(() => {
+    setShowUsageLimitModal(false);
     setShowKeyModal(true);
+  }, []);
+
+  const handleUsageLimitRemove = useCallback(() => {
+    setShowUsageLimitModal(false);
   }, []);
 
   const handleKeyConfirm = useCallback(
@@ -257,6 +281,18 @@ function DropZoneContainer() {
         onClose={() => setShowKeyModal(false)}
         onConfirm={handleKeyConfirm}
       />
+      {usage && usage.quota_limit_bytes !== null && (
+        <UsageLimitModal
+          open={showUsageLimitModal}
+          currentUsageBytes={usage.usage_this_month_bytes}
+          uploadBytes={totalUploadBytes}
+          quotaLimitBytes={usage.quota_limit_bytes}
+          overageRate={0.005}
+          onClose={() => setShowUsageLimitModal(false)}
+          onRemoveFiles={handleUsageLimitRemove}
+          onContinue={handleUsageLimitContinue}
+        />
+      )}
     </>
   );
 }

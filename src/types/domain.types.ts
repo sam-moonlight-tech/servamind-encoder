@@ -5,11 +5,10 @@ export type ProcessType = "compress" | "decompress";
 export interface AuthUser {
   id: string;
   email: string;
-  googleId: string;
   planType: string;
   subscriptionStatus: string;
   betaTierActive: boolean;
-  betaEnrolledAt: string;
+  betaEnrolledAt: string | null;
   createdAt: string;
 }
 

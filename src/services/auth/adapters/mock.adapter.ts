@@ -4,8 +4,7 @@ import type { AuthProvider } from "../auth.provider";
 const MOCK_USER: AuthUser = {
   id: "mock-user-001",
   email: "dev@servamind.com",
-  googleId: "mock-google-id",
-  planType: "beta",
+  planType: "free",
   subscriptionStatus: "active",
   betaTierActive: true,
   betaEnrolledAt: "2026-01-01T00:00:00Z",
@@ -18,8 +17,7 @@ export function createMockAuthProvider(): AuthProvider {
 
   return {
     async initialize() {
-      // Auto-authenticate in mock mode
-      currentUser = MOCK_USER;
+      // Don't auto-authenticate — let the onboarding flow handle sign-in
     },
 
     getUser() {

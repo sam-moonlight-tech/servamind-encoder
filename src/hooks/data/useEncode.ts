@@ -16,6 +16,11 @@ interface EncodeResult {
   encodedSize: number | null;
 }
 
+function getFileExtension(name: string): string {
+  const dot = name.lastIndexOf(".");
+  return dot >= 0 ? name.slice(dot) : "";
+}
+
 export function useEncode() {
   return useMutation({
     mutationFn: async ({
@@ -30,24 +35,26 @@ export function useEncode() {
         file_reference: fileReference,
         idempotency_key: idempotencyKey,
         file_size_bytes: file.size,
+        file_extension: getFileExtension(file.name),
+        original_filename: file.name,
         user_password: userPassword,
       });
       onInitComplete?.(init);
 
       const buffer = await file.arrayBuffer();
-      await encoderService.encodeStream(fileReference, buffer, init.streaming_token);
+      const streamResult = await encoderService.encodeStream(fileReference, buffer, init.streaming_token);
       onStreamComplete?.();
 
-      // Fetch the encoded file to get its size
-      let encodedSize: number | null = null;
+      // Use the encoded size from the stream response
+      const encodedSize = streamResult.file_size_bytes ?? null;
+
+      // Pre-fetch and cache the encoded file for the download button
       try {
         const downloadResponse = await encoderService.download(init.file_id);
         const blob = await downloadResponse.blob();
-        encodedSize = blob.size;
-        // Cache the blob so we don't need to re-download
         encodedBlobCache.set(init.file_id, blob);
       } catch {
-        // Non-critical — size just won't be shown
+        // Non-critical — user can still download manually
       }
 
       return { init, encodedSize };

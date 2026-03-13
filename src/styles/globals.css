@@ -143,6 +143,22 @@
   }
 }
 
+/* Utilities */
+.text-holo-gradient {
+  background: linear-gradient(
+    90deg,
+    var(--color-holo-green),
+    var(--color-holo-seafoam),
+    var(--color-holo-blue),
+    var(--color-holo-pink),
+    var(--color-holo-orange),
+    var(--color-holo-yellow)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 /* Base styles */
 body {
   font-family: var(--font-sans);

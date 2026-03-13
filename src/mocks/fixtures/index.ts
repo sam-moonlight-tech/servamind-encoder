@@ -6,23 +6,37 @@ import type {
   EncodeStreamResponse,
   DecodeInitResponse,
   DecodeStreamResponse,
-  QuotaResponse,
+  UsageResponse,
   PublicStatsResponse,
   ExtensionsStatsResponse,
   AuthHealthResponse,
   BackendHealthResponse,
+  EmailSendLinkResponse,
 } from "@/types/api.types";
 
 export const mockGoogleCallbackResponse: GoogleCallbackResponse = {
   user_id: "dev-user",
   email: "dev@example.com",
-  google_id: "google-dev-123",
-  plan_type: "beta",
+  plan_type: "free",
   subscription_status: "active",
   beta_tier_active: true,
   beta_enrolled_at: "2025-01-01T00:00:00Z",
   created_at: "2025-01-01T00:00:00Z",
-  session_token: "mock_session_token_dev",
+};
+
+export const mockEmailSendLinkResponse: EmailSendLinkResponse = {
+  success: true,
+  message: "Magic link sent successfully",
+};
+
+export const mockEmailVerifyResponse: GoogleCallbackResponse = {
+  user_id: "dev-user-email",
+  email: "dev@example.com",
+  plan_type: "free",
+  subscription_status: "active",
+  beta_tier_active: true,
+  beta_enrolled_at: "2025-01-01T00:00:00Z",
+  created_at: "2025-01-01T00:00:00Z",
 };
 
 export const mockCreateApiKeyResponse: CreateApiKeyResponse = {
@@ -36,6 +50,7 @@ export const mockListApiKeysResponse: ListApiKeysResponse = [
   {
     key_id: "key_abc123",
     key_prefix: "sk_dev_",
+    revoked: false,
     created_at: "2025-01-15T10:30:00Z",
     last_used_at: "2025-02-01T08:00:00Z",
   },
@@ -43,28 +58,42 @@ export const mockListApiKeysResponse: ListApiKeysResponse = [
 
 export const mockEncodeInitResponse: EncodeInitResponse = {
   file_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
-  download_url: "https://api.servaencoder.com/download/6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+  download_url: "/download/6ba7b810-9dad-11d1-80b4-00c04fd430c8",
   streaming_token: "mock_streaming_token_encode",
 };
 
 export const mockEncodeStreamResponse: EncodeStreamResponse = {
   status: "complete",
+  file_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+  original_size_bytes: 1024,
+  encoded_size_bytes: 480,
+  file_size_bytes: 530,
 };
 
 export const mockDecodeInitResponse: DecodeInitResponse = {
   streaming_token: "mock_streaming_token_decode",
+  file_reference: "7ca8c921-0ebe-22e2-91c5-11d15ge541d9",
 };
 
 export const mockDecodeStreamResponse: DecodeStreamResponse = {
-  status: "complete",
+  file_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+  original_filename: "test-file.pdf",
+  file_size_bytes: 1024,
+  download_url: "/download/6ba7b810-9dad-11d1-80b4-00c04fd430c8",
 };
 
-export const mockQuotaResponse: QuotaResponse = {
-  plan_type: "beta",
-  total_bytes_this_month: 53_687_091_200,
-  quota_bytes: 1_073_741_824_000,
-  quota_remaining_bytes: 1_020_054_732_800,
-  percentage_used: 5,
+export const mockUsageResponse: UsageResponse = {
+  user_id: "dev-user",
+  beta_tier_active: true,
+  beta_expiry_date: "2026-06-01T00:00:00Z",
+  usage_this_month_bytes: 53_687_091_200,
+  quota_limit_bytes: 1_099_511_627_776,
+  quota_used_percent: 4.88,
+  overage_bytes: 0,
+  overage_charges: 0,
+  total_lifetime_tb_encoded: 0.05,
+  estimated_savings_bytes: 26_843_545_600,
+  quota_resets_at: "2026-04-01T00:00:00Z",
 };
 
 export const mockPublicStatsResponse: PublicStatsResponse = {

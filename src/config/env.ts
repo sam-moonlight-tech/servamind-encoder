@@ -3,8 +3,7 @@ function toBoolean(value: string | undefined): boolean {
 }
 
 export const env = {
-  authApiUrl: import.meta.env.VITE_AUTH_API_URL as string,
-  backendApiUrl: import.meta.env.VITE_BACKEND_API_URL as string,
+  apiUrl: import.meta.env.VITE_API_URL as string,
   authProvider: (import.meta.env.VITE_AUTH_PROVIDER as string) || "mock",
   googleClientId: (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || "",
   isDev: import.meta.env.DEV,

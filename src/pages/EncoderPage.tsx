@@ -1,12 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 import { AppShell } from "@/components/layout";
 import { ContentPanel } from "@/components/layout/ContentPanel";
-import { NavBarContainer, WorkflowContainer } from "@/containers";
+import { NavBarContainer, WorkflowContainer, OnboardingContainer } from "@/containers";
 import {
   Sidebar,
   DATA_SECTIONS,
   Footer,
-  OnboardingModal,
 } from "@/components/composed";
 import { Dialog, Button } from "@/components/ui";
 import { useWorkflow } from "@/contexts/WorkflowContext";
@@ -25,29 +24,11 @@ const processToSidebarKey: Record<ProcessType, string> = {
 
 function EncoderPage() {
   const { process, setProcess, hasFile, stage, reset } = useWorkflow();
-  const { isAuthenticated, isLoading, signIn } = useAuth();
+  const { isLoading } = useAuth();
   const [showNavWarning, setShowNavWarning] = useState(false);
   const pendingProcessRef = useRef<ProcessType | null>(null);
 
   const isInFlight = stage !== "upload" || hasFile;
-
-  const handleGoogleCredential = useCallback(
-    (credential: string) => {
-      signIn({ googleToken: credential });
-    },
-    [signIn]
-  );
-
-  const handleEmailSubmit = useCallback(
-    (email: string) => {
-      signIn({ googleToken: email });
-    },
-    [signIn]
-  );
-
-  const handleAppleSignIn = useCallback(() => {
-    signIn();
-  }, [signIn]);
 
   const handleSidebarSelect = useCallback(
     (key: string) => {
@@ -87,14 +68,7 @@ function EncoderPage() {
 
   return (
     <AppShell>
-      {!isLoading && (
-        <OnboardingModal
-          open={!isAuthenticated}
-          onEmailSubmit={handleEmailSubmit}
-          onGoogleCredential={handleGoogleCredential}
-          onAppleSignIn={handleAppleSignIn}
-        />
-      )}
+      {!isLoading && <OnboardingContainer />}
       <NavBarContainer />
       <div className="flex flex-1 px-2.5 pb-2.5 gap-0 min-h-0">
         <Sidebar
