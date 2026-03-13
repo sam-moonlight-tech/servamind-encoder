@@ -16,7 +16,7 @@ function triggerBlobDownload(blob: Blob, fileName: string) {
 }
 
 function DownloadContainer() {
-  const { process, fileResults, reset } = useWorkflow();
+  const { process, fileResults, reset, setProcess } = useWorkflow();
 
   const handleDownload = useCallback(async (fileId: string, fileName: string) => {
     let blob = encodedBlobCache.get(fileId);
@@ -42,7 +42,11 @@ function DownloadContainer() {
       fileResults={fileResults}
       onDownload={handleDownload}
       onDownloadAll={handleDownloadAll}
-      onReset={reset}
+      onReset={() => {
+        const currentProcess = process;
+        reset();
+        setProcess(currentProcess);
+      }}
     />
   );
 }

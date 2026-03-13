@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { encoderService } from "@/services/api";
-import type { DecodeInitResponse } from "@/types/api.types";
+import type { DecodeInitResponse, DecodeStreamResponse } from "@/types/api.types";
 
 interface DecodeParams {
   file: File;
@@ -12,6 +12,7 @@ interface DecodeParams {
 
 interface DecodeResult {
   init: DecodeInitResponse;
+  stream: DecodeStreamResponse;
 }
 
 export function useDecode() {
@@ -31,10 +32,10 @@ export function useDecode() {
       onInitComplete?.(init);
 
       const buffer = await file.arrayBuffer();
-      await encoderService.decodeStream(buffer, init.streaming_token, userPassword);
+      const stream = await encoderService.decodeStream(buffer, init.streaming_token, userPassword);
       onStreamComplete?.();
 
-      return { init };
+      return { init, stream };
     },
     retry: 0,
   });

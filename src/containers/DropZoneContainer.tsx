@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UploadStageView, PrivateKeyModal, UsageLimitModal } from "@/components/composed";
 import { useDropZone } from "@/hooks/behavior";
 import { useFileValidation } from "@/hooks/behavior";
@@ -26,7 +26,17 @@ function DropZoneContainer() {
   const { mutateAsync: encodeAsync } = useEncode();
   const { mutateAsync: decodeAsync } = useDecode();
   const { data: usage } = useUsage();
-  const { process, setStage, setProcess, setHasFile, addFileResult } = useWorkflow();
+  const { process, stage, hasFile, setStage, setProcess, setHasFile, addFileResult } = useWorkflow();
+
+  // Clear local file state when the workflow resets (e.g. switching encode/decode)
+  useEffect(() => {
+    if (stage === "upload" && !uploading && files.length > 0 && !hasFile) {
+      setFiles([]);
+      setFileStatuses(new Map());
+      setEncodingResults(new Map());
+      setEncodingIndex(0);
+    }
+  }, [stage, uploading, hasFile]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const firstFile = files[0];
   const { canCompress, canDecompress, sizeError } = useFileValidation(firstFile);
@@ -120,19 +130,21 @@ function DropZoneContainer() {
             idx++;
             setEncodingIndex(idx);
             setStatus(file, "encoding");
-            await decodeAsync({
+            const start = performance.now();
+            const result = await decodeAsync({
               file,
               fileReference: crypto.randomUUID(),
               userPassword: privateKey,
             });
+            const durationMs = performance.now() - start;
             setStatus(file, "complete");
             addFileResult({
-              fileName: file.name,
+              fileName: result.stream.original_filename || file.name,
               originalSize: file.size,
               encodedSize: null,
-              fileId: "",
-              downloadUrl: "",
-              durationMs: null,
+              fileId: result.stream.file_id || "",
+              downloadUrl: result.stream.download_url || "",
+              durationMs,
             });
           }
           setProcess("decompress");
@@ -189,7 +201,8 @@ function DropZoneContainer() {
     [files]
   );
 
-  const exceedsQuota = usage
+  const exceedsQuota = process === "compress"
+    && usage
     && usage.quota_limit_bytes !== null
     && usage.usage_this_month_bytes + totalUploadBytes > usage.quota_limit_bytes;
 
@@ -208,7 +221,8 @@ function DropZoneContainer() {
 
   const handleUsageLimitRemove = useCallback(() => {
     setShowUsageLimitModal(false);
-  }, []);
+    handleClear();
+  }, [handleClear]);
 
   const handleKeyConfirm = useCallback(
     (privateKey: string) => {

@@ -53,7 +53,7 @@ function UploadStageView({
         <div className="flex items-center py-5 px-4">
           <div className="flex items-center gap-2 text-xl font-semibold tracking-[-0.6px] leading-[1.1] whitespace-nowrap">
             <span className="text-serva-gray-600">
-              Encoding your files...
+              {processType === "decompress" ? "Decoding" : "Encoding"} your files...
             </span>
             {encodingProgress && (
               <span className="text-serva-gray-400">
@@ -65,7 +65,7 @@ function UploadStageView({
 
         {/* File table with holo border */}
         <div className="px-4 pb-6">
-          <FileTable files={fileTableItems} encoding />
+          <FileTable files={fileTableItems} encoding processLabel={processType === "decompress" ? "Decoding" : "Encoding"} />
         </div>
       </div>
     );

@@ -139,7 +139,9 @@ function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSetting
         className
       )}
     >
-      <ServamindLogo />
+      <button type="button" onClick={onNavigateDashboard} className="bg-transparent border-none p-0 cursor-pointer">
+        <ServamindLogo />
+      </button>
 
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-6 text-sm leading-none">

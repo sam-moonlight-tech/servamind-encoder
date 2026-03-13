@@ -2,6 +2,17 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { formatFileSize } from "@/services/file";
 
+const GB = 1_073_741_824;
+const TB = 1_099_511_627_776;
+
+/** Always format in GB so all three columns are directly comparable. */
+function formatGB(bytes: number): string {
+  const gb = bytes / GB;
+  if (gb >= 1000) return `${Math.round(gb).toLocaleString()} GB`;
+  if (gb >= 1) return `${Math.round(gb)} GB`;
+  return formatFileSize(bytes); // fall back for small uploads (MB/KB)
+}
+
 interface UsageLimitModalProps {
   open: boolean;
   currentUsageBytes: number;
@@ -25,14 +36,17 @@ function UsageLimitModal({
 }: UsageLimitModalProps) {
   const afterUploadBytes = currentUsageBytes + uploadBytes;
   const overageBytes = afterUploadBytes - quotaLimitBytes;
-  const estimatedCost = Math.max(0, (overageBytes / 1_073_741_824) * overageRate);
+  const estimatedCost = Math.max(0, (overageBytes / GB) * overageRate);
+  const quotaLabel = quotaLimitBytes >= TB
+    ? `${(quotaLimitBytes / TB).toFixed(0)} TB`
+    : formatGB(quotaLimitBytes);
 
   return (
     <Dialog open={open} onClose={onClose} className="max-w-[468px] p-6">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-3">
           <p className="text-sm font-semibold text-serva-gray-600">
-            This upload exceeds your free {formatFileSize(quotaLimitBytes)}
+            This upload exceeds your free {quotaLabel}
           </p>
 
           <div className="flex flex-col gap-4">
@@ -42,7 +56,7 @@ function UsageLimitModal({
                   <div className="flex flex-col gap-3">
                     <span className="text-serva-gray-300">Current usage</span>
                     <span className="font-medium text-serva-gray-600">
-                      {formatFileSize(currentUsageBytes)}
+                      {formatGB(currentUsageBytes)}
                     </span>
                   </div>
                   <div className="flex flex-col gap-3">
@@ -58,7 +72,7 @@ function UsageLimitModal({
                 <div className="flex flex-col gap-3 text-xs">
                   <span className="text-serva-gray-300">After upload</span>
                   <span className="font-medium text-[#971114]">
-                    {formatFileSize(afterUploadBytes)}
+                    {formatGB(afterUploadBytes)}
                   </span>
                 </div>
               </div>
@@ -74,7 +88,7 @@ function UsageLimitModal({
         </div>
 
         <div className="flex justify-end gap-3">
-          <Button variant="ghost" size="md" onClick={onRemoveFiles}>
+          <Button variant="ghost" size="md" className="bg-light-300" onClick={onRemoveFiles}>
             Remove files
           </Button>
           <Button variant="primary" size="md" onClick={onContinue}>

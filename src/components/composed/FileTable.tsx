@@ -4,6 +4,7 @@ import type { FileTableItem } from "@/types/domain.types";
 interface FileTableProps {
   files: FileTableItem[];
   encoding?: boolean;
+  processLabel?: string;
   onRemove?: (index: number) => void;
   onDownload?: (index: number) => void;
   className?: string;
@@ -126,25 +127,29 @@ function HoloProgressBar({ value, indeterminate }: { value: number; indeterminat
 function FileRow({
   file,
   index,
+  processLabel = "Encoding",
   onRemove,
   onDownload,
 }: {
   file: FileTableItem;
   index: number;
+  processLabel?: string;
   onRemove?: (index: number) => void;
   onDownload?: (index: number) => void;
 }) {
   const isEncoded = file.status === "encoded";
+  const isComplete = file.status === "complete";
+  const isDone = isEncoded || isComplete;
   const isEncoding = file.status === "encoding";
   const isReady = file.status === "ready";
   const isError = file.status === "error";
-  const hasDownload = isEncoded && onDownload;
+  const hasDownload = isDone && onDownload;
 
   return (
     <div
       className={cn(
         "flex items-center justify-between h-[56px] py-5 bg-white border-b border-light-200 last:border-b-0",
-        hasDownload ? "pl-8 pr-[10px]" : "px-8"
+        hasDownload ? "pl-8 pr-[10px]" : "px-8",
       )}
     >
       {/* Left side: icon + name + sizes */}
@@ -156,7 +161,7 @@ function FileRow({
           </span>
         </div>
 
-        {isEncoded ? (
+        {isEncoded && file.encodedSize ? (
           <div className="flex items-center gap-4 text-sm leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
             <span className="text-serva-gray-400">
               Original: {file.formattedSize}
@@ -181,7 +186,7 @@ function FileRow({
 
       {/* Right side: status */}
       <div className="flex items-center gap-4 justify-end">
-        {isEncoded && (
+        {isDone && (
           <div className="flex items-center gap-2">
             <CheckIcon />
             <span className="text-sm text-serva-gray-400 leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
@@ -215,7 +220,7 @@ function FileRow({
             <span className="text-sm text-serva-gray-400 leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
               {file.encodingProgress != null
                 ? `${file.encodingProgress}%`
-                : "Encoding..."}
+                : `${processLabel}...`}
             </span>
           </div>
         )}
@@ -270,7 +275,7 @@ function FileRow({
   );
 }
 
-function FileTable({ files, encoding, onRemove, onDownload, className }: FileTableProps) {
+function FileTable({ files, encoding, processLabel, onRemove, onDownload, className }: FileTableProps) {
   if (encoding) {
     return (
       <div className={cn("relative rounded-[16px] p-[2px]", className)}>
@@ -288,6 +293,7 @@ function FileTable({ files, encoding, onRemove, onDownload, className }: FileTab
               key={`${file.name}-${i}`}
               file={file}
               index={i}
+              processLabel={processLabel}
               onRemove={undefined}
               onDownload={onDownload}
             />
