@@ -86,13 +86,13 @@ export const mockUsageResponse: UsageResponse = {
   user_id: "dev-user",
   beta_tier_active: true,
   beta_expiry_date: "2026-06-01T00:00:00Z",
-  usage_this_month_bytes: 53_687_091_200,
-  quota_limit_bytes: 1_099_511_627_776,
-  quota_used_percent: 4.88,
+  usage_this_month_bytes: 966_367_641_600, // ~900 GB — triggers usage limit modal on most uploads
+  quota_limit_bytes: 1_099_511_627_776,    // ~1 TB
+  quota_used_percent: 87.89,
   overage_bytes: 0,
   overage_charges: 0,
-  total_lifetime_tb_encoded: 0.05,
-  estimated_savings_bytes: 26_843_545_600,
+  total_lifetime_tb_encoded: 0.9,
+  estimated_savings_bytes: 483_183_820_800,
   quota_resets_at: "2026-04-01T00:00:00Z",
 };
 
