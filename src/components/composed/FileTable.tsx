@@ -70,6 +70,22 @@ function CheckIcon() {
   );
 }
 
+function WarningIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      className="shrink-0"
+    >
+      <circle cx="7" cy="7" r="5.5" stroke="#660000" strokeWidth="1.2" />
+      <line x1="7" y1="4" x2="7" y2="8" stroke="#660000" strokeWidth="1.2" strokeLinecap="round" />
+      <circle cx="7" cy="10" r="0.75" fill="#660000" />
+    </svg>
+  );
+}
+
 function XMarkIcon() {
   return (
     <svg
@@ -148,8 +164,9 @@ function FileRow({
   return (
     <div
       className={cn(
-        "flex items-center justify-between h-[56px] py-5 bg-white border-b border-light-200 last:border-b-0",
-        hasDownload ? "pl-8 pr-[10px]" : "px-8",
+        "flex items-center justify-between h-[56px] py-5 border-b border-light-200 last:border-b-0",
+        isError ? "bg-[#fff4f4]" : "bg-white",
+        hasDownload ? "pl-8 pr-[10px]" : "pl-8 pr-[22px]",
       )}
     >
       {/* Left side: icon + name + sizes */}
@@ -253,9 +270,12 @@ function FileRow({
 
         {isError && (
           <>
-            <span className="text-sm text-red-500 leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
-              {file.sizeError ?? "Error"}
-            </span>
+            <div className="flex items-center gap-2">
+              <WarningIcon />
+              <span className="text-sm text-[#660000] leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
+                {file.sizeError ?? `${processLabel} failed`}
+              </span>
+            </div>
             {onRemove && (
               <button
                 type="button"
@@ -294,7 +314,7 @@ function FileTable({ files, encoding, processLabel, onRemove, onDownload, classN
               file={file}
               index={i}
               processLabel={processLabel}
-              onRemove={undefined}
+              onRemove={file.status === "error" ? onRemove : undefined}
               onDownload={onDownload}
             />
           ))}

@@ -18,6 +18,9 @@ import {
 
 const baseUrl = env.apiUrl;
 
+// Counter to simulate per-file failures (every 2nd encode init fails)
+let encodeInitCount = 0;
+
 export const handlers = [
   // Auth
   http.post(`${baseUrl}/auth/google/callback`, () => {
@@ -55,9 +58,13 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  // Encoding
+  // Encoding — every 2nd request fails to test per-file error handling
   http.post(`${baseUrl}/api/encode`, async () => {
     await delay(500);
+    encodeInitCount++;
+    if (encodeInitCount % 2 === 0) {
+      return HttpResponse.json({ detail: "Encoding failed" }, { status: 500 });
+    }
     return HttpResponse.json(mockEncodeInitResponse);
   }),
 

@@ -112,36 +112,32 @@ function DropZone({
             {/* Heading */}
             <h2 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] text-center">
               {isDecoding
-                ? "Restore your .serva files"
+                ? "Decode .serva files back into your original dataset"
                 : "Turn your data into reusable .serva files"}
             </h2>
 
             {/* Description */}
             <p className="text-sm text-serva-gray-400 text-center max-w-[380px] leading-[1.4] tracking-[-0.42px]">
               {isDecoding
-                ? "Drop or upload a .serva file to decode it back to its original format."
+                ? "Drop or upload your .serva files to restore your data with byte\u2011for\u2011byte fidelity."
                 : "Upload once and securely reuse the same encoded dataset across models, experiments, and pipelines."}
             </p>
 
+            {/* Select Files button */}
+            <button
+              className="bg-core-purple text-light-200 rounded-[8px] px-3 h-9 text-sm font-semibold transition-colors hover:bg-core-purple/90 active:bg-core-purple/80 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClick();
+              }}
+            >
+              Select Files
+            </button>
+
             {/* File limit text */}
             <p className="text-xs text-serva-gray-300 text-center">
-              {isDecoding
-                ? "Up to 100 MB \u00b7 .serva files only"
-                : "Up to 100 MB \u00b7 txt, csv, json, pdf, png, jpg, mp4"}
+              {"Up to 100 MB \u00b7 txt, csv, json, pdf, png, jpg, mp4"}
             </p>
-
-            {/* Select Files pill button */}
-            {!isDecoding && (
-              <button
-                className="bg-core-purple text-light-200 rounded-[8px] px-3 h-9 text-sm font-semibold transition-colors hover:bg-core-purple/90 active:bg-core-purple/80 cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleClick();
-                }}
-              >
-                Select Files
-              </button>
-            )}
           </>
         )}
 

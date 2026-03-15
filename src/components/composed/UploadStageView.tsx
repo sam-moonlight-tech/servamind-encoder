@@ -65,7 +65,7 @@ function UploadStageView({
 
         {/* File table with holo border */}
         <div className="px-4 pb-6">
-          <FileTable files={fileTableItems} encoding processLabel={processType === "decompress" ? "Decoding" : "Encoding"} />
+          <FileTable files={fileTableItems} encoding processLabel={processType === "decompress" ? "Decoding" : "Encoding"} onRemove={onRemove} />
         </div>
       </div>
     );

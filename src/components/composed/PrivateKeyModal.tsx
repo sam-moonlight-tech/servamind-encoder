@@ -93,7 +93,7 @@ function PrivateKeyModal({ open, mode = "encrypt", onClose, onConfirm }: Private
     secondaryLabel = "Go back";
     onSecondary = handleGoBack;
   } else {
-    heading = "Choose a private key";
+    heading = isDecrypting ? "Enter your private key" : "Choose a private key";
     description = isDecrypting
       ? "Enter the private key you used to encrypt these .serva files to decrypt them."
       : "This key will securely encrypt your serva files. Keep it safe, you'll need it to decrypt them later!";

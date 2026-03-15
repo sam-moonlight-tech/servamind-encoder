@@ -87,13 +87,15 @@ function DropZoneContainer() {
         return map;
       });
 
-      try {
-        if (compress) {
-          let idx = 0;
-          for (const file of files) {
-            idx++;
-            setEncodingIndex(idx);
-            setStatus(file, "encoding");
+      let hasSuccess = false;
+
+      if (compress) {
+        let idx = 0;
+        for (const file of files) {
+          idx++;
+          setEncodingIndex(idx);
+          setStatus(file, "encoding");
+          try {
             const start = performance.now();
             const result = await encodeAsync({
               file,
@@ -104,7 +106,6 @@ function DropZoneContainer() {
             const durationMs = performance.now() - start;
             setStatus(file, "encoded");
 
-            // Track result for display during encoding
             setEncodingResults((prev) => {
               const next = new Map(prev);
               next.set(fileKey(file), {
@@ -122,14 +123,19 @@ function DropZoneContainer() {
               downloadUrl: result.init.download_url,
               durationMs,
             });
+            hasSuccess = true;
+          } catch {
+            setStatus(file, "error");
           }
-          setProcess("compress");
-        } else {
-          let idx = 0;
-          for (const file of files) {
-            idx++;
-            setEncodingIndex(idx);
-            setStatus(file, "encoding");
+        }
+        setProcess("compress");
+      } else {
+        let idx = 0;
+        for (const file of files) {
+          idx++;
+          setEncodingIndex(idx);
+          setStatus(file, "encoding");
+          try {
             const start = performance.now();
             const result = await decodeAsync({
               file,
@@ -146,20 +152,24 @@ function DropZoneContainer() {
               downloadUrl: result.stream.download_url || "",
               durationMs,
             });
+            hasSuccess = true;
+          } catch {
+            setStatus(file, "error");
           }
-          setProcess("decompress");
         }
+        setProcess("decompress");
+      }
 
-        setUploading(false);
+      setUploading(false);
+      if (hasSuccess) {
         setFiles([]);
         setFileStatuses(new Map());
         setEncodingResults(new Map());
         setEncodingIndex(0);
         setStage("download");
-      } catch {
-        setUploading(false);
-        setStage("error");
       }
+      // If no files succeeded, stay on the upload stage showing per-file errors
+      // (the global error stage is only for unscoped errors like network failures)
     },
     [files, encodeAsync, decodeAsync, setStage, setProcess, addFileResult, setStatus]
   );
