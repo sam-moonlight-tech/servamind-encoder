@@ -178,11 +178,11 @@ function FileRow({
           </span>
         </div>
 
-        {isEncoded && file.encodedSize ? (
-          <div className="flex items-center gap-4 text-sm leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
-            <span className="text-serva-gray-400">
-              Original: {file.formattedSize}
-            </span>
+        <div className="flex items-center text-sm leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
+          <span className="text-serva-gray-400 w-[140px]">
+            Original: {file.formattedSize}
+          </span>
+          {isEncoded && file.encodedSize && (
             <div className="flex items-center gap-1">
               <span className="text-serva-gray-400">
                 Encoded: {file.encodedSize}
@@ -193,12 +193,8 @@ function FileRow({
                 </span>
               )}
             </div>
-          </div>
-        ) : (
-          <span className="text-sm text-serva-gray-400 leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
-            Original: {file.formattedSize}
-          </span>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Right side: status */}
