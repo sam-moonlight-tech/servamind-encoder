@@ -18,12 +18,17 @@ ARG VITE_SHOW_COMPRESSION_METRICS=true
 ARG VITE_SYSTEM_DOWN=false
 ARG VITE_DEMO_MODE=false
 
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_AUTH_PROVIDER=$VITE_AUTH_PROVIDER
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+
 RUN npm run build
 
 # Production stage
 FROM nginx:alpine
+RUN apk add --no-cache wget
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+EXPOSE 3000
 CMD ["nginx", "-g", "daemon off;"]
