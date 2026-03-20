@@ -205,7 +205,7 @@ function DownloadStageView({
               </span>
             </p>
             <p className="text-sm text-serva-gray-400 text-center tracking-[-0.42px] leading-[1.4] max-w-[371px]">
-              Your files are now encoded in a deterministic format designed for
+              Your files are now encoded in a universal format designed for
               model training and reuse.
             </p>
           </div>

@@ -1,6 +1,9 @@
-const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-export function generatePrivateKey(length = 32): string {
-  const values = crypto.getRandomValues(new Uint8Array(length));
-  return Array.from(values, (v) => CHARS[v % CHARS.length]).join("");
+export async function generatePrivateKey(): Promise<string> {
+  const key = await crypto.subtle.generateKey(
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"],
+  );
+  const raw = await crypto.subtle.exportKey("raw", key);
+  return btoa(String.fromCharCode(...new Uint8Array(raw)));
 }

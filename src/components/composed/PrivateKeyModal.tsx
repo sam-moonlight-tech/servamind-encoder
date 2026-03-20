@@ -31,8 +31,8 @@ function PrivateKeyModal({ open, mode = "encrypt", onClose, onConfirm }: Private
     }
   }, [open]);
 
-  const handleGenerate = useCallback(() => {
-    const generated = generatePrivateKey();
+  const handleGenerate = useCallback(async () => {
+    const generated = await generatePrivateKey();
     setKey(generated);
     setCopied(false);
   }, []);
