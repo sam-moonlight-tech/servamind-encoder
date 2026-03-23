@@ -128,6 +128,7 @@ x-frontend-endpoints:
   - "POST /api/decode (initiate + stream)"
   - "GET /download/{file_id}"
   - "GET /api/usage"
+  - "GET /api/stripe/payment-methods"
   - "POST /api/stripe/create-setup-intent"
   - "GET /keys"
   - "POST /keys"
@@ -715,6 +716,37 @@ components:
           type: string
           description: Stripe customer ID (created or existing).
           example: "cus_xxx"
+
+    PaymentMethodsResponse:
+      type: object
+      required: [payment_methods, has_payment_method]
+      properties:
+        payment_methods:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: "pm_xxx"
+              brand:
+                type: string
+                example: "visa"
+              last4:
+                type: string
+                example: "4242"
+              exp_month:
+                type: integer
+                example: 12
+              exp_year:
+                type: integer
+                example: 2030
+              is_default:
+                type: boolean
+                example: true
+        has_payment_method:
+          type: boolean
+          description: True if user has at least one card on file.
 
 # =============================================================================
 # Paths
@@ -1614,6 +1646,34 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
   # ── Billing ─────────────────────────────────────────────────────────────────
+
+  /api/stripe/payment-methods:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    get:
+      tags: [Billing]
+      summary: List payment methods
+      operationId: listPaymentMethods
+      description: |
+        List payment methods (cards) for the authenticated user. Returns safe view: id, brand, last4,
+        exp_month, exp_year, is_default. Use for "Card ending in 4242" or "Manage payment methods" UI.
+        Returns empty array when user has no Stripe customer or no cards.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Payment methods list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethodsResponse"
+        "401":
+          description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/stripe/create-setup-intent:
     servers:
