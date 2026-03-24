@@ -13,6 +13,7 @@ interface NavBarProps {
   onNavigateDashboard?: () => void;
   onNavigateSettings?: () => void;
   onNavigateProfile?: () => void;
+  onNavigateBilling?: () => void;
   onMenuOpen?: () => void;
   className?: string;
 }
@@ -128,7 +129,7 @@ function HamburgerIcon() {
   );
 }
 
-function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSettings, onNavigateProfile, onMenuOpen, className }: NavBarProps) {
+function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSettings, onNavigateProfile, onNavigateBilling, onMenuOpen, className }: NavBarProps) {
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const avatarRef = useRef<HTMLButtonElement>(null);
 
@@ -212,12 +213,16 @@ function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSetting
         </button>
 
         {/* Usage pill - shown on both */}
-        <div className="flex items-center gap-1 bg-light-200 rounded-[4px] px-2 h-[30px] text-sm">
+        <button
+          type="button"
+          onClick={onNavigateBilling}
+          className="flex items-center gap-1 bg-light-200 rounded-[4px] px-2 h-[30px] text-sm cursor-pointer hover:bg-light-200/80 transition-colors"
+        >
           <span className="text-serva-gray-400">Used</span>
           <span className="font-medium text-serva-gray-600">{usedDisplay}</span>
           <span className="text-serva-gray-400">/</span>
           <span className="text-serva-gray-400">{totalDisplay}</span>
-        </div>
+        </button>
 
         {/* Desktop avatar */}
         <div className="hidden md:flex items-center">

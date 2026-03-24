@@ -35,6 +35,7 @@ function NavBarContainer() {
         onNavigateDashboard={() => navigate("/")}
         onNavigateSettings={() => navigate("/settings")}
         onNavigateProfile={() => navigate("/settings")}
+        onNavigateBilling={() => navigate("/settings?section=billing")}
         onMenuOpen={handleMenuOpen}
       />
       <MobileMenu
