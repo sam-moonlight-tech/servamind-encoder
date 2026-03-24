@@ -135,7 +135,7 @@ function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSetting
   return (
     <nav
       className={cn(
-        "flex items-center justify-between px-6 h-[54px] bg-light-300",
+        "flex items-center justify-between px-6 h-[54px] bg-light-300 shrink-0",
         className
       )}
     >

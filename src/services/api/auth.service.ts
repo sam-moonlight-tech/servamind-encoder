@@ -6,6 +6,7 @@ import type {
   EmailSendLinkPayload,
   EmailSendLinkResponse,
   EmailVerifyPayload,
+  OnboardingSeenUpdate,
 } from "@/types/api.types";
 import type { HttpClient } from "./client";
 
@@ -15,6 +16,7 @@ export interface AuthService {
   sendEmailLink(payload: EmailSendLinkPayload): Promise<EmailSendLinkResponse>;
   verifyEmailToken(payload: EmailVerifyPayload): Promise<GoogleCallbackResponse>;
   logout(): Promise<void>;
+  updateOnboardingSeen(payload: OnboardingSeenUpdate): Promise<GoogleCallbackResponse>;
   createApiKey(): Promise<CreateApiKeyResponse>;
   revokeApiKey(keyId: string): Promise<void>;
   listApiKeys(): Promise<ListApiKeysResponse>;
@@ -40,6 +42,10 @@ export function createAuthService(client: HttpClient): AuthService {
 
     logout() {
       return client.post<void>("/auth/logout");
+    },
+
+    updateOnboardingSeen(payload) {
+      return client.patch<GoogleCallbackResponse>("/auth/me/onboarding-seen", payload);
     },
 
     createApiKey() {

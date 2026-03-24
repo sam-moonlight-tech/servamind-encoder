@@ -9,6 +9,7 @@ export interface AuthUser {
   subscriptionStatus: string;
   betaTierActive: boolean;
   betaEnrolledAt: string | null;
+  onboardingSeen: boolean;
   createdAt: string;
 }
 

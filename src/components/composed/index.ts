@@ -51,3 +51,11 @@ export {
   SETTINGS_SECTIONS,
   type SidebarProps,
 } from "./Sidebar";
+export {
+  PaymentMethodsTab,
+  type PaymentMethodsTabProps,
+} from "./PaymentMethodsTab";
+export {
+  AddPaymentMethodForm,
+  type AddPaymentMethodFormProps,
+} from "./AddPaymentMethodForm";

@@ -26,6 +26,7 @@ function EncoderPage() {
   const { process, setProcess, hasFile, stage, reset } = useWorkflow();
   const { isLoading } = useAuth();
   const [showNavWarning, setShowNavWarning] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const pendingProcessRef = useRef<ProcessType | null>(null);
 
   const isInFlight = stage !== "upload" || hasFile;
@@ -59,6 +60,10 @@ function EncoderPage() {
     pendingProcessRef.current = null;
   }, []);
 
+  const handleContentScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    setIsScrolled(e.currentTarget.scrollTop > 0);
+  }, []);
+
   const activeKey = processToSidebarKey[process];
   const pageTitle = process === "compress" ? "Encode" : "Decode";
 
@@ -70,21 +75,22 @@ function EncoderPage() {
     <AppShell>
       {!isLoading && <OnboardingContainer />}
       <NavBarContainer />
-      <div className="flex flex-1 px-2.5 pb-2.5 gap-0 min-h-0">
+      <div className="flex flex-1 px-2.5 gap-0 min-h-0">
         <Sidebar
           sections={DATA_SECTIONS}
           activeKey={activeKey}
           onSelect={handleSidebarSelect}
         />
-        <ContentPanel>
-          {showTitle && (
-            <header className="flex items-center justify-between py-6 px-6">
+        <ContentPanel
+          onScroll={handleContentScroll}
+          header={showTitle ? (
+            <header className={`flex items-center justify-between py-6 px-6 bg-white rounded-t-[8px] shrink-0 ${isScrolled ? "border-b border-light-200" : ""}`}>
               <h1 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1]">
                 {pageTitle}
               </h1>
             </header>
-          )}
-
+          ) : undefined}
+        >
           <div className={showTitle ? "px-6 pb-6" : ""}>
             <WorkflowContainer />
           </div>

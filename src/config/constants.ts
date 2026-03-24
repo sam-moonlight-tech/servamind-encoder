@@ -4,18 +4,7 @@ export const MEGABYTE = 1024 ** 2;
 export const KILOBYTE = 1024;
 
 export const COMPRESSED_FILE_TYPE = "serva";
-export const MAX_FILE_SIZE = 2 * GIGABYTE;
-
-export const ALLOWED_ENCODE_EXTENSIONS = [
-  "txt",
-  "csv",
-  "json",
-  "pdf",
-  "png",
-  "jpg",
-  "jpeg",
-  "mp4",
-] as const;
+export const MAX_FILE_SIZE = 10 * GIGABYTE;
 
 export const EXTERNAL_LINKS = {
   COMPANY: "https://www.servamind.com",

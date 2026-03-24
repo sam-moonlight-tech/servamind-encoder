@@ -1,7 +1,7 @@
 import {
   MAX_FILE_SIZE,
+  GIGABYTE,
   COMPRESSED_FILE_TYPE,
-  ALLOWED_ENCODE_EXTENSIONS,
 } from "@/config/constants";
 import type { ProcessType } from "@/types/domain.types";
 
@@ -25,7 +25,7 @@ export function validateFileSize(file: File): { valid: boolean; message?: string
   if (file.size > MAX_FILE_SIZE) {
     return {
       valid: false,
-      message: `File size exceeds maximum of ${MAX_FILE_SIZE / (1024 ** 3)}GB`,
+      message: `File size exceeds maximum of ${Math.round(MAX_FILE_SIZE / GIGABYTE)} GB`,
     };
   }
   return { valid: true };
@@ -40,12 +40,6 @@ export function validateFileType(
   if (process === "compress") {
     if (ext === COMPRESSED_FILE_TYPE) {
       return { valid: false, message: ".serva files cannot be encoded" };
-    }
-    if (!ALLOWED_ENCODE_EXTENSIONS.includes(ext as (typeof ALLOWED_ENCODE_EXTENSIONS)[number])) {
-      return {
-        valid: false,
-        message: `Unsupported file type (.${ext})`,
-      };
     }
   }
 

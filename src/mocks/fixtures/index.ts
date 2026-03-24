@@ -12,6 +12,9 @@ import type {
   AuthHealthResponse,
   BackendHealthResponse,
   EmailSendLinkResponse,
+  SetupIntentResponse,
+  ListPaymentMethodsResponse,
+  PaymentMethod,
 } from "@/types/api.types";
 
 export const mockGoogleCallbackResponse: GoogleCallbackResponse = {
@@ -21,6 +24,7 @@ export const mockGoogleCallbackResponse: GoogleCallbackResponse = {
   subscription_status: "active",
   beta_tier_active: true,
   beta_enrolled_at: "2025-01-01T00:00:00Z",
+  onboarding_seen: false,
   created_at: "2025-01-01T00:00:00Z",
 };
 
@@ -36,6 +40,7 @@ export const mockEmailVerifyResponse: GoogleCallbackResponse = {
   subscription_status: "active",
   beta_tier_active: true,
   beta_enrolled_at: "2025-01-01T00:00:00Z",
+  onboarding_seen: false,
   created_at: "2025-01-01T00:00:00Z",
 };
 
@@ -112,6 +117,25 @@ export const mockExtensionsStatsResponse: ExtensionsStatsResponse = {
     { extension: "json", count: 2400, percent_of_total: 18.7 },
     { extension: "txt", count: 2147, percent_of_total: 16.7 },
   ],
+};
+
+export const mockSetupIntentResponse: SetupIntentResponse = {
+  client_secret: "seti_mock_secret_1234_secret_5678",
+  stripe_customer_id: "cus_mock_12345",
+};
+
+export const mockPaymentMethod: PaymentMethod = {
+  id: "pm_mock_visa_1",
+  brand: "visa",
+  last4: "4242",
+  exp_month: 12,
+  exp_year: 2027,
+  is_default: true,
+};
+
+export const mockListPaymentMethodsResponse: ListPaymentMethodsResponse = {
+  payment_methods: [mockPaymentMethod],
+  has_payment_method: true,
 };
 
 export const mockAuthHealthResponse: AuthHealthResponse = {

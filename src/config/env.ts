@@ -22,4 +22,5 @@ export const env = {
     systemDown: toBoolean(import.meta.env.VITE_SYSTEM_DOWN),
     demoMode: toBoolean(import.meta.env.VITE_DEMO_MODE),
   },
+  stripePublishableKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string,
 } as const;

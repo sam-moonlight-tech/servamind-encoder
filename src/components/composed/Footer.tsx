@@ -8,7 +8,7 @@ function Footer({ className }: FooterProps) {
   return (
     <footer
       className={cn(
-        "h-[85px] w-full overflow-hidden relative shrink-0",
+        "h-[85px] w-full overflow-hidden absolute bottom-0 left-0 pointer-events-none z-10",
         className
       )}
     >

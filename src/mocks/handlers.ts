@@ -14,6 +14,8 @@ import {
   mockExtensionsStatsResponse,
   mockAuthHealthResponse,
   mockBackendHealthResponse,
+  mockSetupIntentResponse,
+  mockListPaymentMethodsResponse,
 } from "./fixtures";
 
 const baseUrl = env.apiUrl;
@@ -39,6 +41,13 @@ export const handlers = [
   http.post(`${baseUrl}/auth/email/verify`, async () => {
     await delay(300);
     return HttpResponse.json(mockEmailVerifyResponse);
+  }),
+
+  http.patch(`${baseUrl}/auth/me/onboarding-seen`, () => {
+    return HttpResponse.json({
+      ...mockGoogleCallbackResponse,
+      onboarding_seen: true,
+    });
   }),
 
   http.post(`${baseUrl}/auth/logout`, () => {
@@ -100,6 +109,16 @@ export const handlers = [
 
   http.get(`${baseUrl}/api/stats/extensions`, () => {
     return HttpResponse.json(mockExtensionsStatsResponse);
+  }),
+
+  // Stripe / Billing
+  http.post(`${baseUrl}/api/stripe/create-setup-intent`, async () => {
+    await delay(300);
+    return HttpResponse.json(mockSetupIntentResponse);
+  }),
+
+  http.get(`${baseUrl}/api/stripe/payment-methods`, () => {
+    return HttpResponse.json(mockListPaymentMethodsResponse);
   }),
 
   // Health

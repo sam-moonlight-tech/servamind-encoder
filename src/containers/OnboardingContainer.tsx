@@ -6,7 +6,7 @@ import { authService } from "@/services/api";
 import { env } from "@/config/env";
 
 function OnboardingContainer() {
-  const { isAuthenticated, signIn } = useAuth();
+  const { isAuthenticated, user, signIn } = useAuth();
   const {
     step,
     completed,
@@ -17,7 +17,7 @@ function OnboardingContainer() {
     nextTutorialStep,
     skipToLastTutorial,
     completeOnboarding,
-  } = useOnboardingFlow();
+  } = useOnboardingFlow(user?.onboardingSeen);
 
   const handleEmailSubmit = useCallback(
     async (email: string) => {

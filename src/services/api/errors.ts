@@ -11,8 +11,15 @@ export class ApiError extends Error {
 
   static fromResponse(
     response: Response,
-    body?: { detail?: string }
+    body?: { detail?: string; error?: string; message?: string }
   ) {
+    if (body?.error === "payment_method_required") {
+      return new ApiError(
+        body.message || "Payment method required",
+        response.status,
+        "PAYMENT_METHOD_REQUIRED"
+      );
+    }
     const detail = body?.detail || response.statusText || "Unknown error";
     return new ApiError(
       detail,
@@ -47,5 +54,9 @@ export class ApiError extends Error {
 
   get isFileNotReady(): boolean {
     return this.errorCode === "FILE_NOT_READY";
+  }
+
+  get isPaymentMethodRequired(): boolean {
+    return this.errorCode === "PAYMENT_METHOD_REQUIRED";
   }
 }

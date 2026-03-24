@@ -4,4 +4,5 @@ export const queryKeys = {
   usage: ["usage"] as const,
   authHealth: ["auth-health"] as const,
   backendHealth: ["backend-health"] as const,
+  paymentMethods: ["payment-methods"] as const,
 } as const;

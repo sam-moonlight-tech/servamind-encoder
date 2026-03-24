@@ -55,23 +55,42 @@ function LoginScreen({ onEmailSubmit, onGoogleCredential }: LoginScreenProps) {
   useEffect(() => {
     const el = googleBtnRef.current;
     const container = containerRef.current;
-    const google = (window as unknown as { google?: GoogleApi }).google;
-    if (!google || !el || !container) return;
+    if (!el || !container) return;
 
-    google.accounts.id.initialize({
-      client_id: env.googleClientId,
-      callback: (response) => {
-        onGoogleCredential(response.credential);
-      },
-    });
+    const initGoogle = () => {
+      const google = (window as unknown as { google?: GoogleApi }).google;
+      if (!google) return;
 
-    google.accounts.id.renderButton(el, {
-      theme: "filled_black",
-      size: "large",
-      width: container.offsetWidth,
-      shape: "pill",
-      text: "continue_with",
-    });
+      google.accounts.id.initialize({
+        client_id: env.googleClientId,
+        callback: (response) => {
+          onGoogleCredential(response.credential);
+        },
+      });
+
+      google.accounts.id.renderButton(el, {
+        theme: "filled_black",
+        size: "large",
+        width: container.offsetWidth,
+        shape: "pill",
+        text: "continue_with",
+      });
+    };
+
+    // If the script already loaded, initialize immediately
+    if ((window as unknown as { google?: GoogleApi }).google) {
+      initGoogle();
+      return;
+    }
+
+    // Otherwise wait for it to load
+    const script = document.querySelector<HTMLScriptElement>(
+      'script[src*="accounts.google.com/gsi/client"]'
+    );
+    if (script) {
+      script.addEventListener("load", initGoogle);
+      return () => script.removeEventListener("load", initGoogle);
+    }
   }, [onGoogleCredential]);
 
   return (

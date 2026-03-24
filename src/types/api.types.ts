@@ -20,7 +20,12 @@ export interface GoogleCallbackResponse {
   subscription_status: "active" | "canceled" | "past_due" | "none";
   beta_tier_active: boolean;
   beta_enrolled_at: string | null;
+  onboarding_seen: boolean;
   created_at: string;
+}
+
+export interface OnboardingSeenUpdate {
+  seen: boolean;
 }
 
 // API Keys
@@ -131,6 +136,32 @@ export interface EmailSendLinkResponse {
 
 export interface EmailVerifyPayload {
   token: string;
+}
+
+// Stripe / Billing
+export interface SetupIntentResponse {
+  client_secret: string;
+  stripe_customer_id: string;
+}
+
+export interface PaymentMethodRequiredErrorBody {
+  error: "payment_method_required";
+  message: string;
+  add_payment_path: string;
+}
+
+export interface PaymentMethod {
+  id: string;
+  brand: string;
+  last4: string;
+  exp_month: number;
+  exp_year: number;
+  is_default: boolean;
+}
+
+export interface ListPaymentMethodsResponse {
+  payment_methods: PaymentMethod[];
+  has_payment_method: boolean;
 }
 
 // Health

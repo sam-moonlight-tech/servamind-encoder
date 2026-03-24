@@ -7,15 +7,9 @@ interface ComparisonDiagramProps {
 /** Small right-pointing arrow connector */
 function Arrow() {
   return (
-    <svg
-      width="21"
-      height="6"
-      viewBox="0 0 21 6"
-      fill="none"
-      className="shrink-0 text-serva-gray-200"
-    >
-      <line x1="0" y1="3" x2="16" y2="3" stroke="currentColor" strokeWidth="1" />
-      <path d="M15 1 L19 3 L15 5" stroke="currentColor" strokeWidth="1" fill="none" />
+    <svg width="22" height="7" viewBox="0 0 22 7" fill="none" className="shrink-0">
+      <path d="M18 0.353516L21 3.35352L18 6.35352" stroke="#614F62" />
+      <path d="M0 3.35352H20.8133" stroke="#614F62" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -23,26 +17,11 @@ function Arrow() {
 /** Branching connector: one input splitting into 3 outputs */
 function BranchConnector() {
   return (
-    <svg
-      width="24"
-      height="77"
-      viewBox="0 0 24 77"
-      fill="none"
-      className="shrink-0 text-serva-gray-200"
-    >
-      {/* Horizontal line from left to center */}
-      <line x1="0" y1="38.5" x2="8" y2="38.5" stroke="currentColor" strokeWidth="1" />
-      {/* Vertical line */}
-      <line x1="8" y1="14" x2="8" y2="63" stroke="currentColor" strokeWidth="1" />
-      {/* Top branch */}
-      <line x1="8" y1="14" x2="18" y2="14" stroke="currentColor" strokeWidth="1" />
-      <path d="M16 12 L20 14 L16 16" stroke="currentColor" strokeWidth="1" fill="none" />
-      {/* Middle branch */}
-      <line x1="8" y1="38.5" x2="18" y2="38.5" stroke="currentColor" strokeWidth="1" />
-      <path d="M16 36.5 L20 38.5 L16 40.5" stroke="currentColor" strokeWidth="1" fill="none" />
-      {/* Bottom branch */}
-      <line x1="8" y1="63" x2="18" y2="63" stroke="currentColor" strokeWidth="1" />
-      <path d="M16 61 L20 63 L16 65" stroke="currentColor" strokeWidth="1" fill="none" />
+    <svg width="25" height="78" viewBox="0 0 25 78" fill="none" className="shrink-0">
+      <path d="M20.375 0.353516L23.375 3.35352L20.375 6.35352" stroke="#614F62" />
+      <path d="M19.9932 35.8223L22.9932 38.8223L19.9932 41.8223" stroke="#614F62" />
+      <path d="M0 38.8223H23M23 3.22852H13.4932V74.2285L23 74.228" stroke="#614F62" />
+      <path d="M19.9932 71.291L22.9932 74.291L19.9932 77.291" stroke="#614F62" />
     </svg>
   );
 }
@@ -55,13 +34,27 @@ function StepLabel({
   children: React.ReactNode;
   variant?: "default" | "highlight" | "serva";
 }) {
+  if (variant === "serva") {
+    return (
+      <div className="relative flex items-center justify-center mb-3">
+        {/* Outermost layer — lightest, narrowest, peeks out furthest below */}
+        <div className="absolute left-3 right-3 top-[19px] h-5 bg-[#a1d76e] rounded-[6px]" />
+        {/* Middle layer — slightly narrower, peeks out just below */}
+        <div className="absolute left-1.5 right-1.5 top-[10px] h-6 bg-[#74bd2d] rounded-[7px]" />
+        {/* Foreground badge */}
+        <div className="relative flex items-center gap-2 h-7 px-3 rounded-[8px] font-mono text-xs tracking-[1.2px] whitespace-nowrap bg-serva-green text-light-300">
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
         "flex items-center gap-2 h-7 px-3 rounded-[8px] font-mono text-xs tracking-[1.2px] whitespace-nowrap",
         variant === "default" && "bg-light-300 text-serva-gray-600",
-        variant === "highlight" && "bg-light-200 text-serva-gray-600",
-        variant === "serva" && "bg-serva-green text-light-300"
+        variant === "highlight" && "bg-light-200 text-serva-gray-600"
       )}
     >
       {children}
@@ -127,7 +120,7 @@ function WithoutRow({
 
 function ComparisonDiagram({ className }: ComparisonDiagramProps) {
   return (
-    <div className={cn("flex flex-col items-center gap-12 mt-10", className)}>
+    <div className={cn("flex flex-col items-center gap-12 mt-10 pb-12", className)}>
       {/* Section heading */}
       <div className="flex flex-col items-center gap-6">
         <h3 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] text-center">
@@ -162,8 +155,8 @@ function ComparisonDiagram({ className }: ComparisonDiagramProps) {
             <StepLabel>DATA SET</StepLabel>
             <Arrow />
             <StepLabel variant="serva">
-              <EncodeIcon />
               .SERVA
+              <EncodeIcon />
             </StepLabel>
             <BranchConnector />
             <div className="flex flex-col gap-2">

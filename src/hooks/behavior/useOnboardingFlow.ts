@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { authService } from "@/services/api";
 
 const ONBOARDING_COMPLETE_KEY = "serva_onboarding_complete";
 
@@ -12,9 +13,17 @@ function isOnboardingComplete(): boolean {
   return localStorage.getItem(ONBOARDING_COMPLETE_KEY) === "true";
 }
 
-function useOnboardingFlow() {
+function useOnboardingFlow(onboardingSeen?: boolean) {
   const [step, setStep] = useState<OnboardingStep>({ screen: "login" });
   const [completed, setCompleted] = useState(isOnboardingComplete);
+
+  // Sync with backend flag — if backend says onboarding was seen, mark complete locally
+  useEffect(() => {
+    if (onboardingSeen && !completed) {
+      localStorage.setItem(ONBOARDING_COMPLETE_KEY, "true");
+      setCompleted(true);
+    }
+  }, [onboardingSeen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const goToCheckEmail = useCallback((email: string) => {
     setStep({ screen: "check-email", email });
@@ -49,6 +58,8 @@ function useOnboardingFlow() {
   const completeOnboarding = useCallback(() => {
     localStorage.setItem(ONBOARDING_COMPLETE_KEY, "true");
     setCompleted(true);
+    // Fire-and-forget — persist to backend so other devices/sessions skip onboarding
+    authService.updateOnboardingSeen({ seen: true }).catch(() => {});
   }, []);
 
   return {

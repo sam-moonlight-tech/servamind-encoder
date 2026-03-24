@@ -11,6 +11,7 @@ function toAuthUser(response: GoogleCallbackResponse): AuthUser {
     subscriptionStatus: response.subscription_status,
     betaTierActive: response.beta_tier_active,
     betaEnrolledAt: response.beta_enrolled_at,
+    onboardingSeen: response.onboarding_seen,
     createdAt: response.created_at,
   };
 }

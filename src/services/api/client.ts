@@ -22,7 +22,7 @@ export function createHttpClient(config: HttpClientConfig) {
     });
 
     if (!response.ok) {
-      let body: { detail?: string } | undefined;
+      let body: { detail?: string; error?: string; message?: string } | undefined;
       try {
         body = await response.json();
       } catch {
@@ -81,7 +81,7 @@ export function createHttpClient(config: HttpClientConfig) {
     });
 
     if (!response.ok) {
-      let body: { detail?: string } | undefined;
+      let body: { detail?: string; error?: string; message?: string } | undefined;
       try {
         body = await response.json();
       } catch {
@@ -93,11 +93,19 @@ export function createHttpClient(config: HttpClientConfig) {
     return response;
   }
 
+  function patch<T>(path: string, body?: unknown): Promise<T> {
+    return request<T>(path, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
   function del<T>(path: string): Promise<T> {
     return request<T>(path, { method: "DELETE" });
   }
 
-  return { get, post, postBinary, getBlob, del, request };
+  return { get, post, patch, postBinary, getBlob, del, request };
 }
 
 export type HttpClient = ReturnType<typeof createHttpClient>;

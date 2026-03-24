@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
-import { ALLOWED_ENCODE_EXTENSIONS, COMPRESSED_FILE_TYPE } from "@/config/constants";
+import { COMPRESSED_FILE_TYPE } from "@/config/constants";
 import type { ProcessType } from "@/types/domain.types";
 
 interface DropZoneProps {
@@ -30,9 +30,7 @@ function DropZone({
 }: DropZoneProps) {
   const isDecoding = processType === "decompress";
   const inputRef = useRef<HTMLInputElement>(null);
-  const acceptAttr = isDecoding
-    ? `.${COMPRESSED_FILE_TYPE}`
-    : ALLOWED_ENCODE_EXTENSIONS.map((ext) => `.${ext}`).join(",");
+  const acceptAttr = isDecoding ? `.${COMPRESSED_FILE_TYPE}` : undefined;
 
   const handleClick = () => {
     inputRef.current?.click();
@@ -136,7 +134,7 @@ function DropZone({
 
             {/* File limit text */}
             <p className="text-xs text-serva-gray-300 text-center">
-              {"Up to 100 MB \u00b7 txt, csv, json, pdf, png, jpg, mp4"}
+              {"Up to 10 GB \u00b7 Any file type"}
             </p>
           </>
         )}

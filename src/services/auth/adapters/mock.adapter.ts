@@ -8,6 +8,7 @@ const MOCK_USER: AuthUser = {
   subscriptionStatus: "active",
   betaTierActive: true,
   betaEnrolledAt: "2026-01-01T00:00:00Z",
+  onboardingSeen: false,
   createdAt: "2026-01-01T00:00:00Z",
 };
 
