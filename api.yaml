@@ -122,6 +122,7 @@ x-cors:
 x-frontend-endpoints:
   - "POST /auth/google/callback"
   - "GET /auth/me"
+  - "PATCH /auth/me/onboarding-seen"
   - "POST /auth/logout"
   - "POST /api/encode"
   - "POST /api/stream/{file_reference}"
@@ -253,10 +254,24 @@ components:
           format: date-time
           nullable: true
           example: "2025-11-01T00:00:00Z"
+        onboarding_seen:
+          type: boolean
+          description: Whether the user has completed onboarding.
+          example: false
         created_at:
           type: string
           format: date-time
           example: "2025-11-01T00:00:00Z"
+
+    OnboardingSeenUpdate:
+      type: object
+      required:
+        - seen
+      properties:
+        seen:
+          type: boolean
+          description: Whether the user has seen onboarding.
+          example: true
 
     # ── API Keys ──────────────────────────────────────────────────────────────
 
@@ -845,6 +860,39 @@ paths:
                 $ref: "#/components/schemas/UserResponse"
         "401":
           description: No valid session cookie or authorization header.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me/onboarding-seen:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    patch:
+      tags: [Authentication]
+      summary: Update onboarding seen flag
+      operationId: patchOnboardingSeen
+      description: |
+        Toggle whether the current user has seen onboarding.
+        Persists across devices and sessions. Use when user completes onboarding.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingSeenUpdate"
+      responses:
+        "200":
+          description: Updated user profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Authentication required.
           content:
             application/json:
               schema:
