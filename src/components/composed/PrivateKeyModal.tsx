@@ -40,7 +40,7 @@ function PrivateKeyModal({ open, mode = "encrypt", onClose, onConfirm }: Private
     setCopied(false);
   }, []);
 
-  const copyTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
