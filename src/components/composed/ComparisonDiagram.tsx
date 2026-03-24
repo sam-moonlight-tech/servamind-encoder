@@ -139,7 +139,7 @@ function ComparisonDiagram({ className }: ComparisonDiagramProps) {
           <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px] text-center">
             Without Servamind
           </p>
-          <div className="flex flex-col gap-2 scale-[0.7] md:scale-100 origin-top -mb-[30%] md:mb-0">
+          <div className="flex flex-col gap-2 scale-[0.85] md:scale-100 origin-top">
             <WithoutRow icon={<CircleIcon />} modelLabel="TRAIN MODEL A" />
             <WithoutRow icon={<TriangleIcon />} modelLabel="TRAIN MODEL B" />
             <WithoutRow icon={<SquareIcon />} modelLabel="TRAIN MODEL C" />
@@ -151,7 +151,7 @@ function ComparisonDiagram({ className }: ComparisonDiagramProps) {
           <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px] text-center">
             With Servamind
           </p>
-          <div className="flex items-center gap-2 justify-center scale-[0.7] md:scale-100 origin-top -mb-[30%] md:mb-0">
+          <div className="flex items-center gap-2 justify-center scale-[0.85] md:scale-100 origin-top">
             <StepLabel>DATA SET</StepLabel>
             <Arrow />
             <StepLabel variant="serva">
