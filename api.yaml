@@ -732,6 +732,46 @@ components:
           description: Stripe customer ID (created or existing).
           example: "cus_xxx"
 
+    PaymentMethodItem:
+      type: object
+      description: |
+        Fields depend on `type`: `card` uses brand/last4/exp_*; `link` uses link_email;
+        `us_bank_account` / `sepa_debit` use bank_name and last4. Unused fields are empty or 0.
+      required: [id, type, is_default, brand, last4, exp_month, exp_year, link_email, bank_name]
+      properties:
+        id:
+          type: string
+          example: "pm_xxx"
+        type:
+          type: string
+          description: Stripe payment method type (e.g. card, link, us_bank_account, sepa_debit).
+          example: "card"
+        is_default:
+          type: boolean
+          example: true
+        brand:
+          type: string
+          description: Card network (card only).
+          example: "visa"
+        last4:
+          type: string
+          description: Last four digits (card or bank debit).
+          example: "4242"
+        exp_month:
+          type: integer
+          example: 12
+        exp_year:
+          type: integer
+          example: 2030
+        link_email:
+          type: string
+          description: Email for Stripe Link (link only).
+          example: "user@example.com"
+        bank_name:
+          type: string
+          description: Bank name (us_bank_account / sepa_debit when available).
+          example: ""
+
     PaymentMethodsResponse:
       type: object
       required: [payment_methods, has_payment_method]
@@ -739,29 +779,10 @@ components:
         payment_methods:
           type: array
           items:
-            type: object
-            properties:
-              id:
-                type: string
-                example: "pm_xxx"
-              brand:
-                type: string
-                example: "visa"
-              last4:
-                type: string
-                example: "4242"
-              exp_month:
-                type: integer
-                example: 12
-              exp_year:
-                type: integer
-                example: 2030
-              is_default:
-                type: boolean
-                example: true
+            $ref: "#/components/schemas/PaymentMethodItem"
         has_payment_method:
           type: boolean
-          description: True if user has at least one card on file.
+          description: True if user has at least one saved payment method (any supported type).
 
 # =============================================================================
 # Paths
@@ -1704,9 +1725,8 @@ paths:
       summary: List payment methods
       operationId: listPaymentMethods
       description: |
-        List payment methods (cards) for the authenticated user. Returns safe view: id, brand, last4,
-        exp_month, exp_year, is_default. Use for "Card ending in 4242" or "Manage payment methods" UI.
-        Returns empty array when user has no Stripe customer or no cards.
+        List saved payment methods for the authenticated user (merged card, Link, US bank account,
+        SEPA debit — see PaymentMethodItem). Returns empty array when user has no Stripe customer or no methods.
       security:
         - BearerAuth: []
       responses:
