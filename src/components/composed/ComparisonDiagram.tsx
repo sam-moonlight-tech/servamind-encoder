@@ -120,10 +120,10 @@ function WithoutRow({
 
 function ComparisonDiagram({ className }: ComparisonDiagramProps) {
   return (
-    <div className={cn("flex flex-col items-center gap-12 mt-10 pb-12", className)}>
+    <div className={cn("flex flex-col items-center gap-12 mt-10 pb-12 md:px-0", className)}>
       {/* Section heading */}
       <div className="flex flex-col items-center gap-6">
-        <h3 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] text-center">
+        <h3 className="text-2xl md:text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.2] text-center">
           Then never preprocess the data again
         </h3>
         <p className="text-sm text-serva-gray-400 text-center leading-[1.4] tracking-[-0.42px] max-w-[371px]">
@@ -133,13 +133,13 @@ function ComparisonDiagram({ className }: ComparisonDiagramProps) {
       </div>
 
       {/* Comparison cards */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row items-stretch gap-4 w-full md:w-auto">
         {/* Without Servamind */}
-        <div className="bg-white border border-light-200 rounded-2xl p-8 flex flex-col items-center gap-6 overflow-hidden">
+        <div className="bg-white border border-light-200 rounded-2xl p-6 md:p-8 flex flex-col items-center gap-6 overflow-hidden">
           <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px] text-center">
             Without Servamind
           </p>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 scale-[0.7] md:scale-100 origin-top -mb-[30%] md:mb-0">
             <WithoutRow icon={<CircleIcon />} modelLabel="TRAIN MODEL A" />
             <WithoutRow icon={<TriangleIcon />} modelLabel="TRAIN MODEL B" />
             <WithoutRow icon={<SquareIcon />} modelLabel="TRAIN MODEL C" />
@@ -147,11 +147,11 @@ function ComparisonDiagram({ className }: ComparisonDiagramProps) {
         </div>
 
         {/* With Servamind */}
-        <div className="bg-white border border-light-200 rounded-2xl p-8 flex flex-col items-center gap-6 overflow-hidden">
+        <div className="bg-white border border-light-200 rounded-2xl p-6 md:p-8 flex flex-col items-center gap-6 overflow-hidden">
           <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px] text-center">
             With Servamind
           </p>
-          <div className="flex items-center gap-2 justify-center">
+          <div className="flex items-center gap-2 justify-center scale-[0.7] md:scale-100 origin-top -mb-[30%] md:mb-0">
             <StepLabel>DATA SET</StepLabel>
             <Arrow />
             <StepLabel variant="serva">

@@ -71,17 +71,28 @@ function FileTableActionBar({
         >
           <BackArrowIcon />
         </button>
-        <h1 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] whitespace-nowrap">
+        <h1 className="text-lg md:text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] whitespace-nowrap">
           {fileCount} {fileCount === 1 ? "file" : "files"} ready to {verb}
         </h1>
       </div>
 
       <div className="flex items-center gap-4">
-        <Button variant="secondary" size="md" onClick={onAddMore}>
+        {/* Mobile: icon-only add button */}
+        <button
+          type="button"
+          onClick={onAddMore}
+          className="flex md:hidden items-center justify-center size-10 rounded-[12px] border border-light-200 bg-white text-serva-gray-600 cursor-pointer hover:bg-light-300 transition-colors"
+          aria-label="Add more files"
+        >
+          <PlusIcon />
+        </button>
+        {/* Desktop: full add button */}
+        <Button variant="secondary" size="md" onClick={onAddMore} className="hidden md:flex">
           Add more files
           <PlusIcon />
         </Button>
-        <Button size="md" onClick={onStart} disabled={!canStart}>
+        {/* Desktop: start button (hidden on mobile, moved to bottom bar) */}
+        <Button size="md" onClick={onStart} disabled={!canStart} className="hidden md:flex">
           {startLabel}
         </Button>
       </div>

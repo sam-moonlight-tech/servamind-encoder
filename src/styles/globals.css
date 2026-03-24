@@ -60,6 +60,8 @@
   --animate-dialog-out: dialog-out 0.15s ease-in forwards;
   --animate-backdrop-in: backdrop-in 0.2s ease-out;
   --animate-backdrop-out: backdrop-out 0.15s ease-in forwards;
+  --animate-sheet-in: slide-up-sheet 0.3s ease-out;
+  --animate-sheet-out: slide-down-sheet 0.2s ease-in forwards;
 }
 
 @keyframes holo-spin {
@@ -131,6 +133,24 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes slide-up-sheet {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down-sheet {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
   }
 }
 

@@ -36,11 +36,20 @@ function SettingsPage() {
   const [billingTab, setBillingTab] = useState<BillingTab>("overview");
   const returnPathRef = useRef<string | null>(null);
 
-  // Read URL params on mount for deep-linking (e.g. redirect from encode 403, page reload)
+  // Read URL params for deep-linking (e.g. redirect from encode 403, page reload, mobile menu nav)
+  const isInternalUpdate = useRef(false);
+
   useEffect(() => {
+    // Skip re-reading params when we ourselves just wrote them
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
+
     const section = searchParams.get("section");
     const tab = searchParams.get("tab");
     const returnPath = searchParams.get("return");
+
     if (section === "billing") {
       setActiveSection("billing");
       if (tab === "payment-methods") {
@@ -48,27 +57,30 @@ function SettingsPage() {
       }
       if (returnPath) {
         returnPathRef.current = returnPath;
-      }
-      // Clean up only the return param; keep section/tab for reload persistence
-      if (returnPath) {
+        isInternalUpdate.current = true;
         const next = new URLSearchParams(searchParams);
         next.delete("return");
         setSearchParams(next, { replace: true });
       }
+    } else if (!section) {
+      setActiveSection("profile");
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep URL in sync with section/tab so page reload restores position
   useEffect(() => {
+    isInternalUpdate.current = true;
     if (activeSection === "billing") {
       setSearchParams(
         { section: "billing", ...(billingTab !== "overview" ? { tab: billingTab } : {}) },
         { replace: true }
       );
     } else {
-      // On profile tab, clear params
       if (searchParams.has("section")) {
         setSearchParams({}, { replace: true });
+      } else {
+        // No URL change needed, reset the flag
+        isInternalUpdate.current = false;
       }
     }
   }, [activeSection, billingTab]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -97,19 +109,21 @@ function SettingsPage() {
     <AppShell>
       <NavBarContainer />
       <div className="flex flex-1 px-2.5 gap-0 min-h-0">
-        <Sidebar
-          sections={SETTINGS_SECTIONS}
-          activeKey={activeSection}
-          onSelect={(key) => setActiveSection(key as SettingsSection)}
-        />
-        <ContentPanel contentClassName="py-10 px-16">
+        <div className="hidden md:flex">
+          <Sidebar
+            sections={SETTINGS_SECTIONS}
+            activeKey={activeSection}
+            onSelect={(key) => setActiveSection(key as SettingsSection)}
+          />
+        </div>
+        <ContentPanel contentClassName="py-6 px-4 md:py-10 md:px-16">
           {activeSection === "profile" && (
             <div>
-              <h1 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] mb-16">
+              <h1 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] mb-8 md:mb-16">
                 Your profile
               </h1>
 
-              <div className="max-w-[394px] ml-[10%] space-y-8">
+              <div className="max-w-full md:max-w-[394px] ml-0 md:ml-[10%] space-y-8">
                 <div>
                   <label className="block text-sm font-medium text-serva-gray-600 mb-1">
                     Name
@@ -120,7 +134,7 @@ function SettingsPage() {
                   <input
                     type="text"
                     defaultValue={displayName}
-                    className="w-full h-[44px] pl-4 pr-4 py-2.5 border border-light-200 rounded-[8px] text-sm text-serva-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-serva-purple/30 focus:border-serva-purple transition-colors"
+                    className="w-full h-[44px] pl-4 pr-4 py-2.5 border border-light-200 rounded-[8px] text-base md:text-sm text-serva-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-serva-purple/30 focus:border-serva-purple transition-colors"
                   />
                 </div>
 
@@ -135,7 +149,7 @@ function SettingsPage() {
                     type="email"
                     value={displayEmail}
                     disabled
-                    className="w-full h-[44px] pl-4 pr-4 py-2.5 border border-light-200 rounded-[8px] text-sm text-serva-gray-200 bg-light-300 cursor-not-allowed"
+                    className="w-full h-[44px] pl-4 pr-4 py-2.5 border border-light-200 rounded-[8px] text-base md:text-sm text-serva-gray-200 bg-light-300 cursor-not-allowed"
                   />
                 </div>
 
@@ -189,7 +203,7 @@ function SettingsPage() {
               {billingTab === "overview" && (
                 <>
                   {isPending ? (
-                    <div className="max-w-[805px] ml-[10%] space-y-8">
+                    <div className="max-w-[805px] ml-0 md:ml-[10%] space-y-8">
                       <Skeleton className="h-5 w-32" />
                       <Skeleton className="h-4 w-24" />
                       <Skeleton className="h-3 w-64" />
@@ -213,7 +227,7 @@ function SettingsPage() {
                       });
 
                       return (
-                        <div className="max-w-[805px] ml-[10%] flex flex-col gap-8">
+                        <div className="max-w-[805px] ml-0 md:ml-[10%] flex flex-col gap-8">
                           {/* Usage Details heading */}
                           <p className="text-base font-semibold text-serva-gray-600">
                             Usage Details
@@ -227,8 +241,8 @@ function SettingsPage() {
 
                             <div className="flex flex-col gap-4 text-xs">
                               {/* Included */}
-                              <div className="flex gap-6 items-start">
-                                <span className="text-serva-gray-400 w-[120px]">
+                              <div className="flex flex-col md:flex-row gap-1 md:gap-6 items-start">
+                                <span className="text-serva-gray-400 w-auto md:w-[120px]">
                                   Included:
                                 </span>
                                 <span className="font-medium text-serva-gray-600">
@@ -237,8 +251,8 @@ function SettingsPage() {
                               </div>
 
                               {/* Additional */}
-                              <div className="flex gap-6 items-start">
-                                <span className="text-serva-gray-400 w-[120px]">
+                              <div className="flex flex-col md:flex-row gap-1 md:gap-6 items-start">
+                                <span className="text-serva-gray-400 w-auto md:w-[120px]">
                                   Additional:
                                 </span>
                                 <div className="flex flex-col gap-2 font-medium">
@@ -253,8 +267,8 @@ function SettingsPage() {
                             </div>
 
                             {/* Usage refreshes on */}
-                            <div className="flex gap-6 items-start text-xs">
-                              <span className="text-serva-gray-400 w-[120px]">
+                            <div className="flex flex-col md:flex-row gap-1 md:gap-6 items-start text-xs">
+                              <span className="text-serva-gray-400 w-auto md:w-[120px]">
                                 Usage refreshes on:
                               </span>
                               <span className="font-medium text-serva-gray-600">
@@ -294,7 +308,9 @@ function SettingsPage() {
           )}
         </ContentPanel>
       </div>
-      <Footer />
+      <div className="hidden md:block">
+        <Footer />
+      </div>
     </AppShell>
   );
 }

@@ -3,17 +3,17 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { lockScroll, unlockScroll } from "@/lib/scrollLock";
 
-interface DialogProps {
+interface BottomSheetProps {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
   className?: string;
 }
 
-function Dialog({ open, onClose, children, className }: DialogProps) {
+function BottomSheet({ open, onClose, children, className }: BottomSheetProps) {
   const [mounted, setMounted] = useState(false);
   const [closing, setClosing] = useState(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -27,15 +27,15 @@ function Dialog({ open, onClose, children, className }: DialogProps) {
         setMounted(false);
         setClosing(false);
         previousFocusRef.current?.focus();
-      }, 150);
+      }, 200);
       return () => clearTimeout(timer);
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Focus the dialog when mounted
+  // Focus the sheet when mounted
   useEffect(() => {
-    if (mounted && !closing && dialogRef.current) {
-      dialogRef.current.focus();
+    if (mounted && !closing && sheetRef.current) {
+      sheetRef.current.focus();
     }
   }, [mounted, closing]);
 
@@ -49,8 +49,8 @@ function Dialog({ open, onClose, children, className }: DialogProps) {
       }
 
       // Focus trap
-      if (e.key === "Tab" && dialogRef.current) {
-        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+      if (e.key === "Tab" && sheetRef.current) {
+        const focusable = sheetRef.current.querySelectorAll<HTMLElement>(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
         if (focusable.length === 0) return;
@@ -80,7 +80,7 @@ function Dialog({ open, onClose, children, className }: DialogProps) {
   return createPortal(
     <div
       className={cn(
-        "fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[10px]",
+        "fixed inset-0 z-50 flex items-end justify-center bg-black/30 backdrop-blur-[10px]",
         closing ? "animate-backdrop-out" : "animate-backdrop-in"
       )}
       onClick={onClose}
@@ -88,11 +88,11 @@ function Dialog({ open, onClose, children, className }: DialogProps) {
       aria-modal="true"
     >
       <div
-        ref={dialogRef}
+        ref={sheetRef}
         tabIndex={-1}
         className={cn(
-          "bg-white rounded-2xl shadow-lg p-8 outline-none",
-          closing ? "animate-dialog-out" : "animate-dialog-in",
+          "w-full max-h-[90vh] overflow-y-auto bg-white rounded-t-2xl shadow-[0px_-4px_24px_rgba(0,0,0,0.12)] pb-[env(safe-area-inset-bottom)] outline-none",
+          closing ? "animate-sheet-out" : "animate-sheet-in",
           className
         )}
         onClick={(e) => e.stopPropagation()}
@@ -104,6 +104,6 @@ function Dialog({ open, onClose, children, className }: DialogProps) {
   );
 }
 
-Dialog.displayName = "Dialog";
+BottomSheet.displayName = "BottomSheet";
 
-export { Dialog, type DialogProps };
+export { BottomSheet, type BottomSheetProps };

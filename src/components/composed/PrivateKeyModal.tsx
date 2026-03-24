@@ -1,7 +1,9 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Dialog } from "@/components/ui";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import { generatePrivateKey } from "@/services/file";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/utility/useIsMobile";
 
 interface PrivateKeyModalProps {
   open: boolean;
@@ -19,6 +21,7 @@ function PrivateKeyModal({ open, mode = "encrypt", onClose, onConfirm }: Private
   const [key, setKey] = useState("");
   const [step, setStep] = useState<Step>("input");
   const [copied, setCopied] = useState(false);
+  const isMobile = useIsMobile();
   const isDecrypting = mode === "decrypt";
   const isValid = key.length >= MIN_LENGTH && key.length <= MAX_LENGTH;
 
@@ -37,10 +40,19 @@ function PrivateKeyModal({ open, mode = "encrypt", onClose, onConfirm }: Private
     setCopied(false);
   }, []);
 
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(key);
     setCopied(true);
-    setTimeout(() => setCopied(false), 3000);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopied(false), 3000);
   }, [key]);
 
   const handleClose = useCallback(() => {
@@ -104,94 +116,106 @@ function PrivateKeyModal({ open, mode = "encrypt", onClose, onConfirm }: Private
 
   const isReadOnly = step === "confirm1" || step === "confirm2";
 
-  return (
-    <Dialog open={open} onClose={handleClose} className="w-[29vw] min-w-[419px] p-[1.67vw] rounded-[16px] shadow-[0px_0px_1px_0px_rgba(0,0,0,0.06),0px_4px_24px_0px_rgba(0,0,0,0.12)]">
-      <div className="flex flex-col gap-6">
-        {/* Header */}
-        <div className={cn("flex flex-col items-start", isReadOnly ? "gap-4" : "gap-3")}>
-          <h2 className="text-sm font-semibold text-serva-gray-600">
-            {heading}
-          </h2>
-          <p className="text-xs text-serva-gray-400 leading-normal">
-            {description}
-          </p>
-        </div>
+  const content = (
+    <div className="flex flex-col gap-6">
+      {/* Header */}
+      <div className={cn("flex flex-col items-start", isReadOnly ? "gap-4" : "gap-3")}>
+        <h2 className="text-sm font-semibold text-serva-gray-600">
+          {heading}
+        </h2>
+        <p className="text-xs text-serva-gray-400 leading-normal">
+          {description}
+        </p>
+      </div>
 
-        {/* Input field with inline button */}
-        <div
+      {/* Input field with inline button */}
+      <div
+        className={cn(
+          "flex items-center justify-between h-[44px] rounded-[8px] pl-4 pr-1",
+          isReadOnly
+            ? "bg-light-300 border border-light-200"
+            : "border-[1.25px] border-light-200 focus-within:border-serva-gray-200"
+        )}
+      >
+        <input
+          type="text"
+          value={key}
+          onChange={(e) => {
+            if (!isReadOnly) {
+              setKey(e.target.value.slice(0, MAX_LENGTH));
+              setCopied(false);
+            }
+          }}
+          readOnly={isReadOnly}
+          placeholder="Enter a private key"
           className={cn(
-            "flex items-center justify-between h-[44px] rounded-[8px] pl-4 pr-1",
-            isReadOnly
-              ? "bg-light-300 border border-light-200"
-              : "border-[1.25px] border-light-200 focus-within:border-serva-gray-200"
+            "flex-1 min-w-0 bg-transparent text-base md:text-sm outline-none truncate",
+            key ? "text-serva-gray-600" : "text-serva-gray-200",
+            isReadOnly && "text-serva-gray-600"
+          )}
+        />
+        {step === "input" && !isDecrypting && (
+          <button
+            type="button"
+            onClick={isValid ? handleCopy : handleGenerate}
+            className={cn(
+              "shrink-0 h-9 px-3 rounded-[4px] text-sm font-semibold text-serva-gray-600 transition-colors cursor-pointer",
+              copied
+                ? "bg-serva-gray-100"
+                : "bg-light-300 hover:bg-light-200"
+            )}
+          >
+            {copied ? "Copied, keep it safe!" : isValid ? "Copy" : "Generate"}
+          </button>
+        )}
+        {isReadOnly && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="shrink-0 h-9 px-3 rounded-[4px] text-sm font-semibold text-serva-gray-600 bg-white border border-light-200 hover:bg-light-300 transition-colors cursor-pointer"
+          >
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-end gap-3">
+        <button
+          type="button"
+          onClick={onSecondary}
+          className="h-9 px-3 rounded-[8px] bg-light-300 text-sm font-semibold text-serva-gray-600 hover:bg-light-200 transition-colors cursor-pointer"
+        >
+          {secondaryLabel}
+        </button>
+        <button
+          type="button"
+          onClick={handlePrimaryClick}
+          disabled={step === "input" && !isValid}
+          className={cn(
+            "h-9 px-3 rounded-[8px] text-sm font-semibold text-light-200 transition-colors cursor-pointer",
+            step === "input" && !isValid
+              ? "bg-serva-gray-200 cursor-not-allowed"
+              : "bg-core-purple hover:bg-core-purple/90"
           )}
         >
-          <input
-            type="text"
-            value={key}
-            onChange={(e) => {
-              if (!isReadOnly) {
-                setKey(e.target.value.slice(0, MAX_LENGTH));
-                setCopied(false);
-              }
-            }}
-            readOnly={isReadOnly}
-            placeholder="Enter a private key"
-            className={cn(
-              "flex-1 min-w-0 bg-transparent text-sm outline-none truncate",
-              key ? "text-serva-gray-600" : "text-serva-gray-200",
-              isReadOnly && "text-serva-gray-600"
-            )}
-          />
-          {step === "input" && !isDecrypting && (
-            <button
-              type="button"
-              onClick={isValid ? handleCopy : handleGenerate}
-              className={cn(
-                "shrink-0 h-9 px-3 rounded-[4px] text-sm font-semibold text-serva-gray-600 transition-colors cursor-pointer",
-                copied
-                  ? "bg-serva-gray-100"
-                  : "bg-light-300 hover:bg-light-200"
-              )}
-            >
-              {copied ? "Copied, keep it safe!" : isValid ? "Copy" : "Generate"}
-            </button>
-          )}
-          {isReadOnly && (
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="shrink-0 h-9 px-3 rounded-[4px] text-sm font-semibold text-serva-gray-600 bg-white border border-light-200 hover:bg-light-300 transition-colors cursor-pointer"
-            >
-              {copied ? "Copied!" : "Copy"}
-            </button>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={onSecondary}
-            className="h-9 px-3 rounded-[8px] bg-light-300 text-sm font-semibold text-serva-gray-600 hover:bg-light-200 transition-colors cursor-pointer"
-          >
-            {secondaryLabel}
-          </button>
-          <button
-            type="button"
-            onClick={handlePrimaryClick}
-            disabled={step === "input" && !isValid}
-            className={cn(
-              "h-9 px-3 rounded-[8px] text-sm font-semibold text-light-200 transition-colors cursor-pointer",
-              step === "input" && !isValid
-                ? "bg-serva-gray-200 cursor-not-allowed"
-                : "bg-core-purple hover:bg-core-purple/90"
-            )}
-          >
-            {primaryLabel}
-          </button>
-        </div>
+          {primaryLabel}
+        </button>
       </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <BottomSheet open={open} onClose={handleClose} className="p-6">
+        {content}
+      </BottomSheet>
+    );
+  }
+
+  return (
+    <Dialog open={open} onClose={handleClose} className="w-[29vw] min-w-[419px] p-[1.67vw] rounded-[16px] shadow-[0px_0px_1px_0px_rgba(0,0,0,0.06),0px_4px_24px_0px_rgba(0,0,0,0.12)]">
+      {content}
     </Dialog>
   );
 }

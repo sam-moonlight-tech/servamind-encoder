@@ -127,7 +127,7 @@ function DownloadIcon() {
 function HoloProgressBar({ value, indeterminate }: { value: number; indeterminate?: boolean }) {
   const clampedValue = Math.min(Math.max(value, 0), 100);
   return (
-    <div className="w-[120px] h-[4px] bg-light-200 rounded-[12px] overflow-hidden shrink-0">
+    <div className="w-[60px] md:w-[120px] h-[4px] bg-light-200 rounded-[12px] overflow-hidden shrink-0">
       <div
         className={cn("h-full rounded-[12px]", indeterminate && "animate-pulse")}
         style={{
@@ -164,41 +164,63 @@ function FileRow({
   return (
     <div
       className={cn(
-        "flex items-center justify-between h-[56px] py-5 border-b border-light-200 last:border-b-0",
+        "flex items-center justify-between h-auto md:h-[56px] p-5 md:py-5 border-b border-light-200 last:border-b-0",
         isError ? "bg-[#fff4f4]" : "bg-white",
-        hasDownload ? "pl-8 pr-[10px]" : "pl-8 pr-[22px]",
+        hasDownload ? "md:pl-8 md:pr-[10px]" : "md:pl-8 md:pr-[22px]",
       )}
     >
       {/* Left side: icon + name + sizes */}
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-3">
-          {isEncoded ? <ServaIcon /> : <DocumentIcon />}
-          <span className="text-sm text-serva-gray-600 leading-[1.1] tracking-[-0.42px] truncate w-[250px]">
+      {/* Mobile layout: flex-col with [icon + name] row then size below, left-aligned */}
+      {/* Desktop layout: single row [icon name | original | encoded] */}
+      <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 min-w-0">
+        <div className="flex items-start md:items-center gap-3 min-w-0">
+          <span className="flex items-center justify-center w-4 h-4 mt-0.5 md:mt-0 shrink-0">
+            {isEncoded ? <ServaIcon /> : <DocumentIcon />}
+          </span>
+          <span className="text-sm text-serva-gray-600 leading-[1.1] tracking-[-0.42px] truncate min-w-0 md:w-[250px]">
             {file.name}
           </span>
         </div>
 
-        <div className="flex items-center text-sm leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
-          <span className="text-serva-gray-400 w-[140px]">
-            Original: {file.formattedSize}
-          </span>
-          {isEncoded && file.encodedSize && (
-            <div className="flex items-center gap-1">
-              <span className="text-serva-gray-400">
-                Encoded: {file.encodedSize}
+        {/* Size info — left-aligned on mobile (flush with icon), inline on desktop */}
+        {isDone && file.encodedSize ? (
+          <div className="flex items-center gap-1 text-sm leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
+            <span className="text-serva-gray-400">
+              Encoded: {file.encodedSize}
+            </span>
+            {file.reductionPercent != null && (
+              <span className="text-serva-gray-200">
+                (-{Math.abs(file.reductionPercent)}%)
               </span>
-              {file.reductionPercent != null && (
-                <span className="text-serva-gray-200">
-                  (-{Math.abs(file.reductionPercent)}%)
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center text-sm leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
+            <span className="text-serva-gray-400 md:w-[140px]">
+              Original: {file.formattedSize}
+            </span>
+            {/* Desktop: show encoded info inline */}
+            {isEncoded && file.encodedSize && (
+              <div className="hidden md:flex items-center gap-1">
+                <span className="text-serva-gray-400">
+                  Encoded: {file.encodedSize}
                 </span>
-              )}
-            </div>
-          )}
-        </div>
+                {file.reductionPercent != null && (
+                  <span className="text-serva-gray-200">
+                    (-{Math.abs(file.reductionPercent)}%)
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right side: status */}
-      <div className="flex items-center gap-4 justify-end">
+      <div className={cn(
+        "flex items-center justify-end shrink-0",
+        hasDownload ? "gap-4" : "gap-2 md:gap-4"
+      )}>
         {isDone && (
           <div className="flex items-center gap-2">
             <CheckIcon />
@@ -211,17 +233,31 @@ function FileRow({
         )}
 
         {hasDownload && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDownload(index);
-            }}
-            className="flex items-center gap-2 h-[36px] px-3 bg-light-300 rounded-[4px] text-sm font-semibold text-serva-gray-600 cursor-pointer hover:bg-light-200 transition-colors"
-          >
-            Download
-            <DownloadIcon />
-          </button>
+          <>
+            {/* Desktop: full download button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDownload(index);
+              }}
+              className="hidden md:flex items-center gap-2 h-[36px] px-3 bg-light-300 rounded-[4px] text-sm font-semibold text-serva-gray-600 cursor-pointer hover:bg-light-200 transition-colors"
+            >
+              Download
+              <DownloadIcon />
+            </button>
+            {/* Mobile: icon-only download button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDownload(index);
+              }}
+              className="flex md:hidden items-center justify-center size-[36px] bg-light-300 rounded-[4px] text-serva-gray-600 cursor-pointer hover:bg-light-200 transition-colors"
+            >
+              <DownloadIcon />
+            </button>
+          </>
         )}
 
         {isEncoding && (

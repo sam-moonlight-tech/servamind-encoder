@@ -126,11 +126,14 @@ export const mockSetupIntentResponse: SetupIntentResponse = {
 
 export const mockPaymentMethod: PaymentMethod = {
   id: "pm_mock_visa_1",
+  type: "card",
+  is_default: true,
   brand: "visa",
   last4: "4242",
   exp_month: 12,
   exp_year: 2027,
-  is_default: true,
+  link_email: "",
+  bank_name: "",
 };
 
 export const mockListPaymentMethodsResponse: ListPaymentMethodsResponse = {

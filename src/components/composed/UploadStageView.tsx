@@ -2,6 +2,7 @@ import { DropZone } from "./DropZone";
 import { ComparisonDiagram } from "./ComparisonDiagram";
 import { FileTable } from "./FileTable";
 import { FileTableActionBar } from "./FileTableActionBar";
+import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import type { FileTableItem, ProcessType } from "@/types/domain.types";
 
@@ -72,6 +73,7 @@ function UploadStageView({
   }
 
   if (file) {
+    const startLabel = processType === "compress" ? "Start encoding" : "Start decoding";
     return (
       <div className={cn("space-y-0", className)}>
         <FileTableActionBar
@@ -81,10 +83,16 @@ function UploadStageView({
           onBack={onClear}
           onAddMore={onAddMore}
           onStart={onStart}
-          className="py-6 px-6"
+          className="py-6 px-4 md:px-6"
         />
-        <div className="px-6 pb-6">
+        <div className="px-4 md:px-6 pb-20 md:pb-6">
           <FileTable files={fileTableItems} onRemove={onRemove} />
+        </div>
+        {/* Mobile fixed bottom action bar */}
+        <div className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-light-200 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] z-30">
+          <Button size="md" onClick={onStart} disabled={!canStart} className="w-full justify-center">
+            {startLabel}
+          </Button>
         </div>
       </div>
     );

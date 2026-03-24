@@ -1,15 +1,51 @@
 import { useState } from "react";
 import { usePaymentMethods } from "@/hooks/data";
 import { AddPaymentMethodForm } from "./AddPaymentMethodForm";
+import type { PaymentMethod } from "@/types/api.types";
 
 interface PaymentMethodsTabProps {
   onPaymentMethodAdded?: () => void;
 }
 
+function PaymentMethodLabel({ pm }: { pm: PaymentMethod }) {
+  if (pm.type === "link") {
+    return (
+      <div className="flex flex-col gap-2">
+        <span className="text-sm text-serva-gray-600">Link</span>
+        <span className="text-xs text-serva-gray-400">{pm.link_email}</span>
+      </div>
+    );
+  }
+
+  if (pm.type === "us_bank_account" || pm.type === "sepa_debit") {
+    return (
+      <div className="flex flex-col gap-2">
+        <span className="text-sm text-serva-gray-600">
+          {pm.bank_name || "Bank account"} ••••{pm.last4}
+        </span>
+      </div>
+    );
+  }
+
+  // Default: card
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-sm text-serva-gray-600">
+        {pm.brand ? `${pm.brand.charAt(0).toUpperCase()}${pm.brand.slice(1)} ` : ""}••••{pm.last4}
+      </span>
+      {pm.exp_month > 0 && (
+        <span className="text-xs text-serva-gray-400">
+          Expires {String(pm.exp_month).padStart(2, "0")}/{pm.exp_year}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function PaymentMethodsTab({ onPaymentMethodAdded }: PaymentMethodsTabProps) {
   const { data, isPending } = usePaymentMethods();
   const methods = data?.payment_methods;
-  const hasCards = methods && methods.length > 0;
+  const hasMethods = methods && methods.length > 0;
   const [showForm, setShowForm] = useState(false);
 
   const handleSuccess = () => {
@@ -18,38 +54,28 @@ function PaymentMethodsTab({ onPaymentMethodAdded }: PaymentMethodsTabProps) {
   };
 
   return (
-    <div className="max-w-[805px] ml-[10%]">
-      <div className="flex flex-col items-start w-[250px] pt-3 gap-3">
+    <div className="max-w-[805px] ml-0 md:ml-[10%]">
+      <div className="flex flex-col items-start w-full md:w-[300px] pt-3 gap-3">
         {isPending ? (
           <>
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="h-[88px] w-[250px] bg-light-200 animate-shimmer rounded-[12px]"
+                className="h-[88px] w-full md:w-[300px] bg-light-200 animate-shimmer rounded-[12px]"
               />
             ))}
           </>
         ) : (
           <>
-            {methods && methods.length > 0 ? (
+            {hasMethods ? (
               <>
                 {methods.map((pm) => (
                   <div
                     key={pm.id}
-                    className="border border-light-200 rounded-[12px] w-[250px] pt-3 pb-4 pl-4 pr-3 flex flex-col gap-4"
+                    className="border border-light-200 rounded-[12px] w-full md:w-[300px] pt-3 pb-4 pl-4 pr-3 flex flex-col gap-4"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-0.5">
-                          <span className="text-sm text-serva-gray-600">
-                            ••••{pm.last4}
-                          </span>
-                        </div>
-                        <span className="text-xs text-serva-gray-400">
-                          Expires {String(pm.exp_month).padStart(2, "0")}/
-                          {pm.exp_year}
-                        </span>
-                      </div>
+                      <PaymentMethodLabel pm={pm} />
                       {pm.is_default ? (
                         <span className="bg-serva-gray-600 text-white text-xs font-semibold px-3 py-1 rounded-[4px] leading-[1.4]">
                           Default
@@ -81,7 +107,7 @@ function PaymentMethodsTab({ onPaymentMethodAdded }: PaymentMethodsTabProps) {
         )}
 
         {showForm ? (
-          <div className="w-full min-w-[400px]">
+          <div className="w-full md:min-w-[400px]">
             <AddPaymentMethodForm
               onSuccess={handleSuccess}
               onCancel={() => setShowForm(false)}
@@ -89,7 +115,7 @@ function PaymentMethodsTab({ onPaymentMethodAdded }: PaymentMethodsTabProps) {
           </div>
         ) : (
           <div className="pt-3">
-            {hasCards ? (
+            {hasMethods ? (
               <button
                 type="button"
                 onClick={() => setShowForm(true)}

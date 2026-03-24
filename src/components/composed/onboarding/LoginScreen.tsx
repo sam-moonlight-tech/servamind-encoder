@@ -114,7 +114,7 @@ function LoginScreen({ onEmailSubmit, onGoogleCredential }: LoginScreenProps) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Personal or work email"
-          className="w-full rounded-[12px] border border-[#EAEAEA] px-4 py-3 pr-14 text-sm text-serva-gray-600 placeholder:text-serva-gray-400 focus:border-2 focus:border-serva-purple focus:outline-none transition-colors"
+          className="w-full rounded-[12px] border border-[#EAEAEA] px-4 py-3 pr-14 text-base md:text-sm text-serva-gray-600 placeholder:text-serva-gray-400 focus:border-2 focus:border-serva-purple focus:outline-none transition-colors"
         />
         <button
           type="submit"

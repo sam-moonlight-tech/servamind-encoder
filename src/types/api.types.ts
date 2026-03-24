@@ -152,11 +152,14 @@ export interface PaymentMethodRequiredErrorBody {
 
 export interface PaymentMethod {
   id: string;
+  type: string;
+  is_default: boolean;
   brand: string;
   last4: string;
   exp_month: number;
   exp_year: number;
-  is_default: boolean;
+  link_email: string;
+  bank_name: string;
 }
 
 export interface ListPaymentMethodsResponse {

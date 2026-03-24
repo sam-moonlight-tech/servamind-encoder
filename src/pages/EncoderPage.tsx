@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppShell } from "@/components/layout";
 import { ContentPanel } from "@/components/layout/ContentPanel";
 import { NavBarContainer, WorkflowContainer, OnboardingContainer } from "@/containers";
@@ -25,11 +26,24 @@ const processToSidebarKey: Record<ProcessType, string> = {
 function EncoderPage() {
   const { process, setProcess, hasFile, stage, reset } = useWorkflow();
   const { isLoading } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showNavWarning, setShowNavWarning] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pendingProcessRef = useRef<ProcessType | null>(null);
 
   const isInFlight = stage !== "upload" || hasFile;
+
+  // Read process type from URL params (e.g. /?process=decode from mobile menu)
+  useEffect(() => {
+    const processParam = searchParams.get("process");
+    if (processParam && sidebarKeyToProcess[processParam]) {
+      const target = sidebarKeyToProcess[processParam];
+      if (target !== process && !isInFlight) {
+        setProcess(target);
+      }
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSidebarSelect = useCallback(
     (key: string) => {
@@ -76,27 +90,31 @@ function EncoderPage() {
       {!isLoading && <OnboardingContainer />}
       <NavBarContainer />
       <div className="flex flex-1 px-2.5 gap-0 min-h-0">
-        <Sidebar
-          sections={DATA_SECTIONS}
-          activeKey={activeKey}
-          onSelect={handleSidebarSelect}
-        />
+        <div className="hidden md:flex">
+          <Sidebar
+            sections={DATA_SECTIONS}
+            activeKey={activeKey}
+            onSelect={handleSidebarSelect}
+          />
+        </div>
         <ContentPanel
           onScroll={handleContentScroll}
           header={showTitle ? (
-            <header className={`flex items-center justify-between py-6 px-6 bg-white rounded-t-[8px] shrink-0 ${isScrolled ? "border-b border-light-200" : ""}`}>
+            <header className={`flex items-center justify-between py-6 px-4 md:px-6 bg-white rounded-t-[8px] shrink-0 ${isScrolled ? "border-b border-light-200" : ""}`}>
               <h1 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1]">
                 {pageTitle}
               </h1>
             </header>
           ) : undefined}
         >
-          <div className={showTitle ? "px-6 pb-6" : ""}>
+          <div className={showTitle ? "px-4 md:px-6 pb-6" : ""}>
             <WorkflowContainer />
           </div>
         </ContentPanel>
       </div>
-      {!hasFile && <Footer />}
+      <div className="hidden md:block">
+        {!hasFile && <Footer />}
+      </div>
 
       <Dialog open={showNavWarning} onClose={handleNavCancel} className="max-w-[400px]">
         <div className="flex flex-col items-center gap-6 text-center">

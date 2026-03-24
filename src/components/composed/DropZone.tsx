@@ -55,6 +55,12 @@ function DropZone({
       onDragOver={onDragOver}
       onDrop={onDrop}
       onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
       role="button"
       tabIndex={0}
       aria-label="Drop zone for file upload"
@@ -68,7 +74,7 @@ function DropZone({
         onChange={handleInputChange}
       />
 
-      <div className="flex flex-col items-center justify-center py-16 px-8 gap-5">
+      <div className="flex flex-col items-center justify-center py-8 px-4 md:py-16 md:px-8 gap-5">
         {file ? (
           <div className="text-center">
             <p className="text-serva-gray-600 font-semibold text-xl tracking-[-0.6px] leading-[1.1]">
@@ -108,22 +114,27 @@ function DropZone({
             </div>
 
             {/* Heading */}
-            <h2 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] text-center">
+            <h2 className="text-2xl md:text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.2] text-center">
               {isDecoding
                 ? "Decode .serva files back into your original dataset"
                 : "Turn your data into reusable .serva files"}
             </h2>
 
             {/* Description */}
-            <p className="text-sm text-serva-gray-400 text-center max-w-[380px] leading-[1.4] tracking-[-0.42px]">
+            <p className="text-sm text-serva-gray-400 text-center max-w-full md:max-w-[380px] leading-[1.4] tracking-[-0.42px]">
               {isDecoding
                 ? "Drop or upload your .serva files to restore your data with byte\u2011for\u2011byte fidelity."
                 : "Upload once and securely reuse the same encoded dataset across models, experiments, and pipelines."}
             </p>
 
+            {/* File limit text — above button on mobile, below on desktop */}
+            <p className="text-xs text-serva-gray-300 text-center order-1 md:order-2">
+              {"Up to 10 GB \u00b7 Any file type"}
+            </p>
+
             {/* Select Files button */}
             <button
-              className="bg-core-purple text-light-200 rounded-[8px] px-3 h-9 text-sm font-semibold transition-colors hover:bg-core-purple/90 active:bg-core-purple/80 cursor-pointer"
+              className="bg-core-purple text-light-200 rounded-[8px] px-3 h-9 text-sm font-semibold transition-colors hover:bg-core-purple/90 active:bg-core-purple/80 cursor-pointer order-2 md:order-1"
               onClick={(e) => {
                 e.stopPropagation();
                 handleClick();
@@ -131,11 +142,6 @@ function DropZone({
             >
               Select Files
             </button>
-
-            {/* File limit text */}
-            <p className="text-xs text-serva-gray-300 text-center">
-              {"Up to 10 GB \u00b7 Any file type"}
-            </p>
           </>
         )}
 
