@@ -598,7 +598,10 @@ components:
         platform_average_compression_ratio:
           type: number
           format: float
-          example: 0.75
+          description: >
+            Percentage size reduction vs original input bytes across all recorded encodes,
+            i.e. ((total input − total output) / total input) × 100.
+          example: 30.1
         platform_total_files_encoded:
           type: integer
           example: 12345
