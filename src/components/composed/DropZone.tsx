@@ -1,7 +1,17 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
+import {
+  useRive,
+  useViewModel,
+  useViewModelInstance,
+  useViewModelInstanceBoolean,
+  Layout,
+  Fit,
+} from "@rive-app/react-webgl2";
 import { cn } from "@/lib/utils";
 import { COMPRESSED_FILE_TYPE } from "@/config/constants";
 import type { ProcessType } from "@/types/domain.types";
+
+const RIVE_LAYOUT = new Layout({ fit: Fit.Cover });
 
 interface DropZoneProps {
   isDragging: boolean;
@@ -32,6 +42,27 @@ function DropZone({
   const inputRef = useRef<HTMLInputElement>(null);
   const acceptAttr = isDecoding ? `.${COMPRESSED_FILE_TYPE}` : undefined;
 
+  const { RiveComponent, rive } = useRive({
+    src: "/Aurora_mk2.riv",
+    artboard: "Artboard",
+    stateMachines: "State Machine 1",
+    autoplay: true,
+    autoBind: true,
+    layout: RIVE_LAYOUT,
+  });
+
+  // Access ViewModel to programmatically set hover during drag
+  const viewModel = useViewModel(rive, { name: "ViewModel1" });
+  const vmInstance = useViewModelInstance(viewModel, { useDefault: true, rive });
+  const { setValue: setIsHovering } = useViewModelInstanceBoolean("isHovering", vmInstance);
+
+  useEffect(() => {
+    if (setIsHovering && isDragging) {
+      setIsHovering(true);
+      return () => setIsHovering(false);
+    }
+  }, [isDragging, setIsHovering]);
+
   const handleClick = () => {
     inputRef.current?.click();
   };
@@ -46,8 +77,8 @@ function DropZone({
   return (
     <div
       className={cn(
-        "relative rounded-[16px] border border-dashed border-serva-gray-100 cursor-pointer transition-all duration-200",
-        isDragging && "scale-[1.005] border-core-purple",
+        "relative overflow-hidden rounded-[16px] border border-dashed border-serva-gray-100 cursor-pointer transition-all duration-200",
+        isDragging && "border-core-purple",
         className
       )}
       onDragEnter={onDragEnter}
@@ -74,10 +105,15 @@ function DropZone({
         onChange={handleInputChange}
       />
 
-      <div className="flex flex-col items-center justify-center py-8 px-4 md:py-16 md:px-8 gap-5">
+      {/* Rive animation background */}
+      <div className={cn("absolute inset-0 rounded-[16px] overflow-hidden", isDragging && "pointer-events-none")}>
+        <RiveComponent className="w-full h-full" />
+      </div>
+
+      <div className="relative pointer-events-none flex flex-col items-center justify-center py-8 px-4 md:py-16 md:px-8 gap-6">
         {file ? (
           <div className="text-center">
-            <p className="text-serva-gray-600 font-semibold text-xl tracking-[-0.6px] leading-[1.1]">
+            <p className="text-serva-gray-600 font-semibold text-xl leading-[1.1]">
               {file.name}
             </p>
             <p className="text-sm text-serva-gray-400 mt-2">
@@ -86,35 +122,27 @@ function DropZone({
           </div>
         ) : (
           <>
-            {/* Cloud icon in white bordered box */}
+            {/* Upload/download icon in white bordered box */}
             <div className="bg-white border border-light-200 rounded-[8px] p-3">
               <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
+                width="12"
+                height="16"
+                viewBox="0 0 12 16"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-serva-gray-600"
+                className="text-serva-gray-400"
               >
-                {isDecoding ? (
-                  <>
-                    <path d="M12 11v5m0 0l-2.5-2.5M12 16l2.5-2.5" />
-                    <path d="M6.25 18A5.25 5.25 0 017 7.75a6.5 6.5 0 0110 0A5.25 5.25 0 0117.75 18" />
-                  </>
-                ) : (
-                  <>
-                    <path d="M12 16v-5m0 0l-2.5 2.5M12 11l2.5 2.5" />
-                    <path d="M6.25 18A5.25 5.25 0 017 7.75a6.5 6.5 0 0110 0A5.25 5.25 0 0117.75 18" />
-                  </>
-                )}
+                <path d="M6 10V1" />
+                <path d="M2.5 4.5L6 1l3.5 3.5" />
+                <path d="M11 8v5.5a1.5 1.5 0 01-1.5 1.5h-7A1.5 1.5 0 011 13.5V8" />
               </svg>
             </div>
 
             {/* Heading */}
-            <h2 className="text-2xl md:text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.2] text-center">
+            <h2 className="text-2xl md:text-xl font-semibold text-serva-gray-600 leading-[1.2] text-center">
               {isDecoding
                 ? "Decode .serva files back into your original dataset"
                 : "Turn your data into reusable .serva files"}
@@ -123,18 +151,18 @@ function DropZone({
             {/* Description */}
             <p className="text-sm text-serva-gray-400 text-center max-w-full md:max-w-[380px] leading-[1.4] tracking-[-0.42px]">
               {isDecoding
-                ? "Drop or upload your .serva files to restore your data with byte\u2011for\u2011byte fidelity."
+                ? "Drop or upload your .serva files to restore your data with byte‑for‑byte fidelity."
                 : "Upload once and securely reuse the same encoded dataset across models, experiments, and pipelines."}
             </p>
 
             {/* File limit text — above button on mobile, below on desktop */}
             <p className="text-xs text-serva-gray-300 text-center order-1 md:order-2">
-              {"Up to 10 GB \u00b7 Any file type"}
+              {isDecoding ? "Up to 10 GB · .serva files only" : "Up to 10 GB · Any file type"}
             </p>
 
             {/* Select Files button */}
             <button
-              className="bg-core-purple text-light-200 rounded-[8px] px-3 h-9 text-sm font-semibold transition-colors hover:bg-core-purple/90 active:bg-core-purple/80 cursor-pointer order-2 md:order-1"
+              className="pointer-events-auto bg-core-purple text-light-200 rounded-[8px] px-3 h-9 text-sm font-semibold transition-colors hover:bg-core-purple/90 active:bg-core-purple/80 cursor-pointer order-2 md:order-1"
               onClick={(e) => {
                 e.stopPropagation();
                 handleClick();
