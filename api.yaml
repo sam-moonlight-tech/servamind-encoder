@@ -130,6 +130,8 @@ x-frontend-endpoints:
   - "GET /download/{file_id}"
   - "GET /api/usage"
   - "GET /api/stripe/payment-methods"
+  - "POST /api/stripe/payment-methods/default"
+  - "DELETE /api/stripe/payment-methods/{payment_method_id}"
   - "POST /api/stripe/create-setup-intent"
   - "GET /keys"
   - "POST /keys"
@@ -236,6 +238,11 @@ components:
           type: string
           format: email
           example: "user@example.com"
+        name:
+          type: string
+          nullable: true
+          description: Display name set by the user (optional).
+          example: "Alex"
         plan_type:
           type: string
           description: Current subscription plan. One of `free` or `premium`.
@@ -262,6 +269,17 @@ components:
           type: string
           format: date-time
           example: "2025-11-01T00:00:00Z"
+
+    ProfileNameUpdate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Display name (leading/trailing whitespace is trimmed).
 
     OnboardingSeenUpdate:
       type: object
@@ -735,6 +753,15 @@ components:
           description: Stripe customer ID (created or existing).
           example: "cus_xxx"
 
+    StripeSetDefaultPaymentMethodRequest:
+      type: object
+      required: [payment_method_id]
+      properties:
+        payment_method_id:
+          type: string
+          description: Payment method to use for invoices (must be attached to this customer).
+          example: "pm_xxx"
+
     PaymentMethodItem:
       type: object
       description: |
@@ -884,6 +911,57 @@ paths:
                 $ref: "#/components/schemas/UserResponse"
         "401":
           description: No valid session cookie or authorization header.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags: [Authentication]
+      summary: Update current user profile
+      operationId: patchCurrentUserProfile
+      description: |
+        Updates profile fields for the authenticated user. Currently only `name` is supported.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileNameUpdate"
+      responses:
+        "200":
+          description: Updated user profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error (e.g. empty name after trim).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [Authentication]
+      summary: Delete current user account
+      operationId: deleteCurrentUserAccount
+      description: |
+        Permanently deletes the authenticated user, associated Stripe billing data (best-effort),
+        and application data (CASCADE). Revokes the current session and clears the session cookie.
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Account deleted; session revoked.
+        "401":
+          description: Authentication required.
           content:
             application/json:
               schema:
@@ -1741,6 +1819,101 @@ paths:
                 $ref: "#/components/schemas/PaymentMethodsResponse"
         "401":
           description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/stripe/payment-methods/default:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    post:
+      tags: [Billing]
+      summary: Set default payment method for invoices
+      operationId: setDefaultPaymentMethod
+      description: |
+        Sets `invoice_settings.default_payment_method` on the Stripe customer. Used for monthly usage
+        billing when multiple methods are saved.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StripeSetDefaultPaymentMethodRequest"
+      responses:
+        "204":
+          description: Default updated.
+        "400":
+          description: No Stripe customer yet.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Payment method not attached to this customer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Stripe API error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/stripe/payment-methods/{payment_method_id}:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    delete:
+      tags: [Billing]
+      summary: Detach payment method
+      operationId: deletePaymentMethod
+      description: |
+        Removes a payment method from the customer. Detaching the last method means no card on file
+        until the user adds one again (encode gate may apply).
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: payment_method_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "pm_xxx"
+      responses:
+        "204":
+          description: Payment method detached.
+        "400":
+          description: Invalid id or no Stripe customer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Payment method not attached to this customer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Stripe API error.
           content:
             application/json:
               schema:
