@@ -10,7 +10,7 @@ export const routes: RouteObject[] = [
     element: <EncoderPage />,
   },
   {
-    path: "/settings",
+    path: "/settings/*",
     element: (
       <ProtectedRoute>
         <SettingsPage />

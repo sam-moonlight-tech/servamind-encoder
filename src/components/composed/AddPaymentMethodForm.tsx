@@ -58,7 +58,7 @@ function CheckoutForm({
     const result = await stripe.confirmSetup({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/settings?section=billing&tab=payment-methods`,
+        return_url: `${window.location.origin}/settings/billing/payment-methods`,
       },
       redirect: "if_required",
     });

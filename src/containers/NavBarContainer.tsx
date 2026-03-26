@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { NavBar } from "@/components/composed";
 import { MobileMenu } from "@/components/composed/MobileMenu";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,16 +12,14 @@ function NavBarContainer() {
   const { process } = useWorkflow();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const activeKey = useMemo(() => {
-    if (location.pathname === "/settings") {
-      const section = searchParams.get("section");
-      return section === "billing" ? "billing" : "profile";
+    if (location.pathname.startsWith("/settings")) {
+      return location.pathname.startsWith("/settings/billing") ? "billing" : "profile";
     }
     return process === "decompress" ? "decode" : "encode";
-  }, [location.pathname, searchParams, process]);
+  }, [location.pathname, process]);
 
   const handleMenuOpen = useCallback(() => setMobileMenuOpen(true), []);
   const handleMenuClose = useCallback(() => setMobileMenuOpen(false), []);
@@ -35,8 +33,9 @@ function NavBarContainer() {
         onNavigateDashboard={() => navigate("/")}
         onNavigateSettings={() => navigate("/settings")}
         onNavigateProfile={() => navigate("/settings")}
-        onNavigateBilling={() => navigate("/settings?section=billing")}
+        onNavigateBilling={() => navigate("/settings/billing")}
         onMenuOpen={handleMenuOpen}
+        isSettingsPage={location.pathname.startsWith("/settings")}
       />
       <MobileMenu
         open={mobileMenuOpen}
@@ -46,7 +45,7 @@ function NavBarContainer() {
         activeKey={activeKey}
         onNavigateEncode={() => navigate("/?process=encode")}
         onNavigateDecode={() => navigate("/?process=decode")}
-        onNavigateSettings={() => navigate("/settings?section=billing")}
+        onNavigateSettings={() => navigate("/settings/billing")}
         onNavigateProfile={() => navigate("/settings")}
         onSignOut={signOut}
       />

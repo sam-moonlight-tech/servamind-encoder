@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { AppShell } from "@/components/layout";
 import { ContentPanel } from "@/components/layout/ContentPanel";
 import { NavBarContainer } from "@/containers";
@@ -29,61 +29,32 @@ function SettingsPage() {
   const { user } = useAuth();
   const { data: usage, isPending } = useUsage();
   const { data: paymentMethodsData } = usePaymentMethods();
-  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] =
-    useState<SettingsSection>("profile");
-  const [billingTab, setBillingTab] = useState<BillingTab>("overview");
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const returnPathRef = useRef<string | null>(null);
 
-  // Read URL params for deep-linking (e.g. redirect from encode 403, page reload, mobile menu nav)
-  const isInternalUpdate = useRef(false);
+  // Derive section and billing tab from URL path
+  const pathAfterSettings = location.pathname.replace(/^\/settings\/?/, "");
+  let activeSection: SettingsSection = "profile";
+  let billingTab: BillingTab = "overview";
 
-  useEffect(() => {
-    // Skip re-reading params when we ourselves just wrote them
-    if (isInternalUpdate.current) {
-      isInternalUpdate.current = false;
-      return;
+  if (pathAfterSettings.startsWith("billing")) {
+    activeSection = "billing";
+    if (pathAfterSettings === "billing/payment-methods") {
+      billingTab = "payment-methods";
     }
+  }
 
-    const section = searchParams.get("section");
-    const tab = searchParams.get("tab");
+  // Handle ?return= param (from payment method redirect)
+  useEffect(() => {
     const returnPath = searchParams.get("return");
-
-    if (section === "billing") {
-      setActiveSection("billing");
-      if (tab === "payment-methods") {
-        setBillingTab("payment-methods");
-      }
-      if (returnPath) {
-        returnPathRef.current = returnPath;
-        isInternalUpdate.current = true;
-        const next = new URLSearchParams(searchParams);
-        next.delete("return");
-        setSearchParams(next, { replace: true });
-      }
-    } else if (!section) {
-      setActiveSection("profile");
+    if (returnPath) {
+      returnPathRef.current = returnPath;
+      // Strip the return param from URL
+      navigate(location.pathname, { replace: true });
     }
-  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Keep URL in sync with section/tab so page reload restores position
-  useEffect(() => {
-    isInternalUpdate.current = true;
-    if (activeSection === "billing") {
-      setSearchParams(
-        { section: "billing", ...(billingTab !== "overview" ? { tab: billingTab } : {}) },
-        { replace: true }
-      );
-    } else {
-      if (searchParams.has("section")) {
-        setSearchParams({}, { replace: true });
-      } else {
-        // No URL change needed, reset the flag
-        isInternalUpdate.current = false;
-      }
-    }
-  }, [activeSection, billingTab]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams, location.pathname, navigate]);
 
   const handlePaymentMethodAdded = () => {
     if (returnPathRef.current) {
@@ -93,8 +64,32 @@ function SettingsPage() {
     }
   };
 
+  const handleSidebarSelect = (key: string) => {
+    if (key === "billing") {
+      navigate("/settings/billing");
+    } else {
+      navigate("/settings");
+    }
+  };
+
   const displayName = user?.email?.split("@")[0] ?? "";
   const displayEmail = user?.email ?? "";
+  const [nameValue, setNameValue] = useState(displayName);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+
+  // Sync name when user loads
+  useEffect(() => {
+    setNameValue(displayName);
+  }, [displayName]);
+
+  const handleSave = useCallback(async () => {
+    if (saveState !== "idle") return;
+    setSaveState("saving");
+    // TODO: wire to profile update API when available
+    await new Promise((r) => setTimeout(r, 800));
+    setSaveState("saved");
+    setTimeout(() => setSaveState("idle"), 2000);
+  }, [saveState]);
 
   const [now] = useState(() => new Date());
   const resetDate = usage?.quota_resets_at
@@ -102,7 +97,7 @@ function SettingsPage() {
     : new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
   const goToPaymentMethods = () => {
-    setBillingTab("payment-methods");
+    navigate("/settings/billing/payment-methods");
   };
 
   return (
@@ -113,13 +108,13 @@ function SettingsPage() {
           <Sidebar
             sections={SETTINGS_SECTIONS}
             activeKey={activeSection}
-            onSelect={(key) => setActiveSection(key as SettingsSection)}
+            onSelect={handleSidebarSelect}
           />
         </div>
-        <ContentPanel contentClassName="py-6 px-4 md:py-10 md:px-16">
+        <ContentPanel contentClassName="py-6 px-4 md:px-6">
           {activeSection === "profile" && (
             <div>
-              <h1 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] mb-8 md:mb-16">
+              <h1 className="text-xl font-semibold text-serva-gray-600 leading-[1.1] mb-8 md:mb-16">
                 Your profile
               </h1>
 
@@ -133,8 +128,9 @@ function SettingsPage() {
                   </p>
                   <input
                     type="text"
-                    defaultValue={displayName}
-                    className="w-full h-[44px] pl-4 pr-4 py-2.5 border border-light-200 rounded-[8px] text-base md:text-sm text-serva-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-serva-purple/30 focus:border-serva-purple transition-colors"
+                    value={nameValue}
+                    onChange={(e) => setNameValue(e.target.value)}
+                    className="w-full h-[44px] pl-4 pr-4 py-2.5 border border-light-200 rounded-[8px] text-base md:text-sm text-serva-gray-600 bg-white focus:outline-none focus:border-serva-gray-600 transition-colors"
                   />
                 </div>
 
@@ -154,8 +150,22 @@ function SettingsPage() {
                 </div>
 
                 <div className="pt-2">
-                  <Button variant="primary" size="md">
-                    Save
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={handleSave}
+                    disabled={saveState !== "idle"}
+                    className={saveState === "saved" ? "!bg-core-purple/70" : ""}
+                  >
+                    {saveState === "saving" && (
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    )}
+                    {saveState === "idle" && "Save"}
+                    {saveState === "saving" && "Saving\u2026"}
+                    {saveState === "saved" && "Saved"}
                   </Button>
                 </div>
               </div>
@@ -164,7 +174,7 @@ function SettingsPage() {
 
           {activeSection === "billing" && (
             <div>
-              <h1 className="text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] mb-6">
+              <h1 className="text-xl font-semibold text-serva-gray-600 leading-[1.1] mb-6">
                 Billing
               </h1>
 
@@ -172,7 +182,7 @@ function SettingsPage() {
               <div className="flex gap-6 border-b border-light-200 mb-8">
                 <button
                   type="button"
-                  onClick={() => setBillingTab("overview")}
+                  onClick={() => navigate("/settings/billing")}
                   className={cn(
                     "pb-3 text-sm font-medium border-b-2 cursor-pointer",
                     billingTab === "overview"
@@ -184,7 +194,7 @@ function SettingsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setBillingTab("payment-methods")}
+                  onClick={() => navigate("/settings/billing/payment-methods")}
                   className={cn(
                     "pb-3 text-sm font-medium border-b-2 cursor-pointer",
                     billingTab === "payment-methods"
