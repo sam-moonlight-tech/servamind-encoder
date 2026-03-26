@@ -12,11 +12,12 @@ function triggerBlobDownload(blob: Blob, fileName: string) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Delay revocation so the browser has time to start the download
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function DownloadContainer() {
-  const { process, fileResults, reset, setProcess } = useWorkflow();
+  const { process, fileResults, reset } = useWorkflow();
 
   const handleDownload = useCallback(async (fileId: string, fileName: string) => {
     let blob = encodedBlobCache.get(fileId);
@@ -28,8 +29,11 @@ function DownloadContainer() {
   }, []);
 
   const handleDownloadAll = useCallback(async () => {
-    for (const result of fileResults) {
+    for (let i = 0; i < fileResults.length; i++) {
+      const result = fileResults[i];
       if (!result.fileId) continue;
+      // Small delay between downloads so browsers don't block them as popups
+      if (i > 0) await new Promise((r) => setTimeout(r, 500));
       const servaName = result.fileName.replace(/\.[^.]+$/, ".serva");
       const displayName = process === "compress" ? servaName : result.fileName;
       await handleDownload(result.fileId, displayName);
@@ -42,11 +46,7 @@ function DownloadContainer() {
       fileResults={fileResults}
       onDownload={handleDownload}
       onDownloadAll={handleDownloadAll}
-      onReset={() => {
-        const currentProcess = process;
-        reset();
-        setProcess(currentProcess);
-      }}
+      onReset={reset}
     />
   );
 }

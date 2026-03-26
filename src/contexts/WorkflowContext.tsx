@@ -1,11 +1,17 @@
 import { createContext, useCallback, useContext, useReducer } from "react";
 import type { WorkflowStage, ProcessType, FileResult } from "@/types/domain.types";
 
-interface WorkflowState {
+interface PerProcessState {
   stage: WorkflowStage;
-  process: ProcessType;
   hasFile: boolean;
   fileResults: FileResult[];
+}
+
+interface WorkflowState {
+  activeProcess: ProcessType;
+  isUploading: boolean;
+  isScrolled: boolean;
+  processes: Record<ProcessType, PerProcessState>;
 }
 
 type WorkflowAction =
@@ -13,30 +19,73 @@ type WorkflowAction =
   | { type: "SET_PROCESS"; process: ProcessType }
   | { type: "SET_HAS_FILE"; hasFile: boolean }
   | { type: "ADD_FILE_RESULT"; result: FileResult }
+  | { type: "SET_IS_UPLOADING"; isUploading: boolean }
+  | { type: "SET_IS_SCROLLED"; isScrolled: boolean }
   | { type: "RESET" };
 
-const initialState: WorkflowState = {
+const perProcessInitial: PerProcessState = {
   stage: "upload",
-  process: "compress",
   hasFile: false,
   fileResults: [],
+};
+
+const initialState: WorkflowState = {
+  activeProcess: "compress",
+  isUploading: false,
+  isScrolled: false,
+  processes: {
+    compress: { ...perProcessInitial },
+    decompress: { ...perProcessInitial },
+  },
 };
 
 function workflowReducer(
   state: WorkflowState,
   action: WorkflowAction
 ): WorkflowState {
+  const active = state.activeProcess;
   switch (action.type) {
     case "SET_STAGE":
-      return { ...state, stage: action.stage };
+      return {
+        ...state,
+        processes: {
+          ...state.processes,
+          [active]: { ...state.processes[active], stage: action.stage },
+        },
+      };
     case "SET_PROCESS":
-      return { ...state, process: action.process };
+      return { ...state, activeProcess: action.process };
     case "SET_HAS_FILE":
-      return { ...state, hasFile: action.hasFile };
+      return {
+        ...state,
+        processes: {
+          ...state.processes,
+          [active]: { ...state.processes[active], hasFile: action.hasFile },
+        },
+      };
     case "ADD_FILE_RESULT":
-      return { ...state, fileResults: [...state.fileResults, action.result] };
+      return {
+        ...state,
+        processes: {
+          ...state.processes,
+          [active]: {
+            ...state.processes[active],
+            fileResults: [...state.processes[active].fileResults, action.result],
+          },
+        },
+      };
+    case "SET_IS_UPLOADING":
+      return { ...state, isUploading: action.isUploading };
+    case "SET_IS_SCROLLED":
+      return { ...state, isScrolled: action.isScrolled };
     case "RESET":
-      return initialState;
+      return {
+        ...state,
+        processes: {
+          ...state.processes,
+          [active]: { ...perProcessInitial },
+        },
+      };
     default:
       return state;
   }
@@ -47,10 +96,14 @@ interface WorkflowContextValue {
   process: ProcessType;
   hasFile: boolean;
   fileResults: FileResult[];
+  isUploading: boolean;
+  isScrolled: boolean;
   setStage: (stage: WorkflowStage) => void;
   setProcess: (process: ProcessType) => void;
   setHasFile: (hasFile: boolean) => void;
   addFileResult: (result: FileResult) => void;
+  setIsUploading: (isUploading: boolean) => void;
+  setIsScrolled: (isScrolled: boolean) => void;
   reset: () => void;
 }
 
@@ -58,6 +111,8 @@ const WorkflowContext = createContext<WorkflowContextValue | null>(null);
 
 function WorkflowProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(workflowReducer, initialState);
+
+  const active = state.processes[state.activeProcess];
 
   const setStage = useCallback((stage: WorkflowStage) => {
     dispatch({ type: "SET_STAGE", stage });
@@ -75,6 +130,14 @@ function WorkflowProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "ADD_FILE_RESULT", result });
   }, []);
 
+  const setIsUploading = useCallback((isUploading: boolean) => {
+    dispatch({ type: "SET_IS_UPLOADING", isUploading });
+  }, []);
+
+  const setIsScrolled = useCallback((isScrolled: boolean) => {
+    dispatch({ type: "SET_IS_SCROLLED", isScrolled });
+  }, []);
+
   const reset = useCallback(() => {
     dispatch({ type: "RESET" });
   }, []);
@@ -82,14 +145,18 @@ function WorkflowProvider({ children }: { children: React.ReactNode }) {
   return (
     <WorkflowContext.Provider
       value={{
-        stage: state.stage,
-        process: state.process,
-        hasFile: state.hasFile,
-        fileResults: state.fileResults,
+        stage: active.stage,
+        process: state.activeProcess,
+        hasFile: active.hasFile,
+        fileResults: active.fileResults,
+        isUploading: state.isUploading,
+        isScrolled: state.isScrolled,
         setStage,
         setProcess,
         setHasFile,
         addFileResult,
+        setIsUploading,
+        setIsScrolled,
         reset,
       }}
     >

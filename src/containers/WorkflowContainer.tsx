@@ -14,12 +14,12 @@ const stageComponents: Record<WorkflowStage, React.ComponentType> = {
 };
 
 function WorkflowContainer() {
-  const { stage } = useWorkflow();
+  const { stage, process } = useWorkflow();
   const StageComponent = stageComponents[stage];
 
   return (
     <WorkflowCard stage={stage}>
-      <StageComponent />
+      <StageComponent key={process} />
     </WorkflowCard>
   );
 }

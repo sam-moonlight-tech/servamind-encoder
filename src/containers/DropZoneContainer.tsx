@@ -9,7 +9,7 @@ import { queryKeys } from "@/hooks/data/keys";
 import { useWorkflow } from "@/contexts/WorkflowContext";
 import { ApiError } from "@/services/api";
 import { getFileTypeLabel, formatFileSize, validateFileSize } from "@/services/file";
-import type { FileTableItem } from "@/types/domain.types";
+import type { FileTableItem, ProcessType } from "@/types/domain.types";
 
 type FileStatus = "ready" | "waiting" | "encoding" | "encoded" | "uploading" | "complete" | "error";
 
@@ -18,32 +18,52 @@ interface EncodingFileResult {
   durationMs: number;
 }
 
+interface CachedFileState {
+  files: File[];
+  fileStatuses: Map<string, FileStatus>;
+  encodingResults: Map<string, EncodingFileResult>;
+  encodingIndex: number;
+}
+
+const fileStateCache = new Map<ProcessType, CachedFileState>();
+
 function DropZoneContainer() {
-  const [files, setFiles] = useState<File[]>([]);
-  const [fileStatuses, setFileStatuses] = useState<Map<string, FileStatus>>(new Map());
-  const [uploading, setUploading] = useState(false);
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [showUsageLimitModal, setShowUsageLimitModal] = useState(false);
-  const [showPaymentRequiredModal, setShowPaymentRequiredModal] = useState(false);
-  const [encodingResults, setEncodingResults] = useState<Map<string, EncodingFileResult>>(new Map());
-  const [encodingIndex, setEncodingIndex] = useState(0);
-  const addMoreInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { mutateAsync: encodeAsync } = useEncode();
   const { mutateAsync: decodeAsync } = useDecode();
   const { data: usage } = useUsage();
-  const { process, stage, hasFile, setStage, setProcess, setHasFile, addFileResult } = useWorkflow();
+  const { process, hasFile, setStage, setProcess, setHasFile, addFileResult, isUploading, setIsUploading } = useWorkflow();
 
-  // Clear local file state when the workflow resets (e.g. switching encode/decode)
+  // Restore from cache if this process has persisted files
+  const cached = hasFile ? fileStateCache.get(process) : undefined;
+
+  const [files, setFiles] = useState<File[]>(() => cached?.files ?? []);
+  const [fileStatuses, setFileStatuses] = useState<Map<string, FileStatus>>(() => cached?.fileStatuses ?? new Map());
+  const [showKeyModal, setShowKeyModal] = useState(false);
+  const [showUsageLimitModal, setShowUsageLimitModal] = useState(false);
+  const [showPaymentRequiredModal, setShowPaymentRequiredModal] = useState(false);
+  const [encodingResults, setEncodingResults] = useState<Map<string, EncodingFileResult>>(() => cached?.encodingResults ?? new Map());
+  const [encodingIndex, setEncodingIndex] = useState(() => cached?.encodingIndex ?? 0);
+  const [fileProgress, setFileProgress] = useState<Map<string, number>>(new Map());
+  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const addMoreInputRef = useRef<HTMLInputElement>(null);
+
+  // Keep a ref to latest state for the unmount cleanup
+  const stateRef = useRef({ files, fileStatuses, encodingResults, encodingIndex });
+  stateRef.current = { files, fileStatuses, encodingResults, encodingIndex };
+
+  // Save local file state to cache on unmount so it persists across tab switches
   useEffect(() => {
-    if (stage === "upload" && !uploading && files.length > 0 && !hasFile) {
-      setFiles([]);
-      setFileStatuses(new Map());
-      setEncodingResults(new Map());
-      setEncodingIndex(0);
-    }
-  }, [stage, uploading, hasFile]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      if (stateRef.current.files.length > 0) {
+        fileStateCache.set(process, { ...stateRef.current });
+      } else {
+        fileStateCache.delete(process);
+      }
+    };
+  }, [process]);
 
   const firstFile = files[0];
   const { canCompress, canDecompress, sizeError } = useFileValidation(firstFile);
@@ -72,6 +92,36 @@ function DropZoneContainer() {
     handleDrop,
   } = useDropZone(handleFileSelect);
 
+  const startSimulatedProgress = useCallback((file: File) => {
+    const key = fileKey(file);
+    setFileProgress((prev) => { const next = new Map(prev); next.set(key, 0); return next; });
+    // Clear any existing timer
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    progressTimerRef.current = setInterval(() => {
+      setFileProgress((prev) => {
+        const current = prev.get(key) ?? 0;
+        if (current >= 90) {
+          // Slow down near the end — don't go past 90 until real completion
+          return prev;
+        }
+        const next = new Map(prev);
+        // Ease: bigger jumps early, smaller near 90
+        const increment = Math.max(1, Math.round((90 - current) * 0.08));
+        next.set(key, Math.min(90, current + increment));
+        return next;
+      });
+    }, 200);
+  }, []);
+
+  const stopSimulatedProgress = useCallback((file: File) => {
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+    const key = fileKey(file);
+    setFileProgress((prev) => { const next = new Map(prev); next.set(key, 100); return next; });
+  }, []);
+
   const setStatus = useCallback((file: File, status: FileStatus) => {
     setFileStatuses((prev) => {
       const next = new Map(prev);
@@ -83,7 +133,7 @@ function DropZoneContainer() {
   const handleUpload = useCallback(
     async (compress: boolean, privateKey: string) => {
       if (files.length === 0) return;
-      setUploading(true);
+      setIsUploading(true);
       setEncodingIndex(0);
       setEncodingResults(new Map());
 
@@ -102,6 +152,7 @@ function DropZoneContainer() {
           idx++;
           setEncodingIndex(idx);
           setStatus(file, "encoding");
+          startSimulatedProgress(file);
           try {
             const start = performance.now();
             const result = await encodeAsync({
@@ -111,6 +162,7 @@ function DropZoneContainer() {
               userPassword: privateKey,
             });
             const durationMs = performance.now() - start;
+            stopSimulatedProgress(file);
             setStatus(file, "encoded");
 
             setEncodingResults((prev) => {
@@ -133,10 +185,11 @@ function DropZoneContainer() {
             hasSuccess = true;
           } catch (err) {
             if (err instanceof ApiError && err.isPaymentMethodRequired) {
-              setUploading(false);
+              setIsUploading(false);
               setShowPaymentRequiredModal(true);
               return;
             }
+            stopSimulatedProgress(file);
             setStatus(file, "error");
           }
         }
@@ -147,6 +200,7 @@ function DropZoneContainer() {
           idx++;
           setEncodingIndex(idx);
           setStatus(file, "encoding");
+          startSimulatedProgress(file);
           try {
             const start = performance.now();
             const result = await decodeAsync({
@@ -155,6 +209,7 @@ function DropZoneContainer() {
               userPassword: privateKey,
             });
             const durationMs = performance.now() - start;
+            stopSimulatedProgress(file);
             setStatus(file, "complete");
             addFileResult({
               fileName: result.stream.original_filename || file.name,
@@ -167,36 +222,42 @@ function DropZoneContainer() {
             hasSuccess = true;
           } catch (err) {
             if (err instanceof ApiError && err.isPaymentMethodRequired) {
-              setUploading(false);
+              setIsUploading(false);
               setShowPaymentRequiredModal(true);
               return;
             }
+            stopSimulatedProgress(file);
             setStatus(file, "error");
           }
         }
         setProcess("decompress");
       }
 
-      setUploading(false);
+      setIsUploading(false);
       if (hasSuccess) {
         queryClient.invalidateQueries({ queryKey: queryKeys.usage });
         setFiles([]);
         setFileStatuses(new Map());
         setEncodingResults(new Map());
+        setFileProgress(new Map());
         setEncodingIndex(0);
         setStage("download");
       }
       // If no files succeeded, stay on the upload stage showing per-file errors
       // (the global error stage is only for unscoped errors like network failures)
     },
-    [files, encodeAsync, decodeAsync, setStage, setProcess, addFileResult, setStatus, queryClient, navigate]
+    [files, encodeAsync, decodeAsync, setStage, setProcess, addFileResult, setStatus, setIsUploading, queryClient, startSimulatedProgress, stopSimulatedProgress]
   );
 
   const handleClear = useCallback(() => {
     setFiles([]);
     setFileStatuses(new Map());
+    setEncodingResults(new Map());
+    setFileProgress(new Map());
+    setEncodingIndex(0);
+    fileStateCache.delete(process);
     setHasFile(false);
-  }, [setHasFile]);
+  }, [setHasFile, process]);
 
   const handleRemove = useCallback((index: number) => {
     setFiles((prev) => {
@@ -254,7 +315,7 @@ function DropZoneContainer() {
 
   const handlePaymentRequiredContinue = useCallback(() => {
     setShowPaymentRequiredModal(false);
-    navigate("/settings?section=billing&tab=payment-methods&return=/");
+    navigate("/settings/billing/payment-methods?return=/");
   }, [navigate]);
 
   const handlePaymentRequiredRemove = useCallback(() => {
@@ -289,6 +350,7 @@ function DropZoneContainer() {
         formattedSize: formatFileSize(file.size),
         status,
         sizeError: fileError,
+        encodingProgress: fileProgress.get(key),
         encodedSize: result ? formatFileSize(result.encodedSize) : undefined,
         reductionPercent:
           result && file.size > 0
@@ -297,7 +359,7 @@ function DropZoneContainer() {
         durationSeconds: result ? result.durationMs / 1000 : undefined,
       };
     });
-  }, [files, fileStatuses, encodingResults]);
+  }, [files, fileStatuses, encodingResults, fileProgress]);
 
   return (
     <>
@@ -314,8 +376,8 @@ function DropZoneContainer() {
         fileTableItems={fileTableItems}
         processType={process}
         canStart={canStart}
-        uploading={uploading}
-        encodingProgress={uploading ? { current: encodingIndex, total: files.length } : undefined}
+        uploading={isUploading}
+        encodingProgress={isUploading ? { current: encodingIndex, total: files.length } : undefined}
         isDragging={isDragging}
         onFileSelect={handleFileSelect}
         onClear={handleClear}
