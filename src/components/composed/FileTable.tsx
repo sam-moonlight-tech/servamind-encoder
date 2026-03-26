@@ -189,7 +189,7 @@ function FileRow({
               Encoded: {file.encodedSize}
             </span>
             {file.reductionPercent != null && (
-              <span className="text-serva-gray-200">
+              <span className="text-serva-green font-semibold">
                 (-{Math.abs(file.reductionPercent)}%)
               </span>
             )}

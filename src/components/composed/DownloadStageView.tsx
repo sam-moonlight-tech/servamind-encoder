@@ -113,7 +113,8 @@ function ServaEncoderBadgeIcon() {
 
 function formatReduction(original: number, encoded: number): number {
   if (original === 0) return 0;
-  return Math.round(((original - encoded) / original) * 100);
+  const reduction = ((original - encoded) / original) * 100;
+  return Math.max(0, Math.round(reduction));
 }
 
 function DownloadStageView({
@@ -125,6 +126,16 @@ function DownloadStageView({
   className,
 }: DownloadStageViewProps) {
   const isDecoding = process === "decompress";
+
+  // Calculate total space saved across all files (bytes)
+  const totalSavedBytes = useMemo(() => {
+    return fileResults.reduce((sum, result) => {
+      if (result.encodedSize !== null && result.originalSize > result.encodedSize) {
+        return sum + (result.originalSize - result.encodedSize);
+      }
+      return sum;
+    }, 0);
+  }, [fileResults]);
 
   const fileTableItems: FileTableItem[] = useMemo(() => {
     return fileResults.map((result) => {
@@ -193,6 +204,27 @@ function DownloadStageView({
           onDownload={handleDownloadByIndex}
         />
       </div>
+
+      {/* Space savings banner — encoding only */}
+      {!isDecoding && totalSavedBytes > 0 && (
+        <div className="px-4 pb-6">
+          <div
+            className="border border-light-200 rounded-[8px] p-4 flex items-center justify-center"
+            style={{
+              backgroundImage:
+                "linear-gradient(130deg, rgba(194,234,83,0.1) 0%, rgba(189,255,227,0.1) 20%, rgba(169,183,252,0.1) 40%, rgba(252,202,236,0.1) 60%, rgba(255,216,169,0.1) 80%, rgba(254,255,211,0.1) 100%)",
+            }}
+          >
+            <p className="text-sm text-serva-gray-600 tracking-[-0.42px] leading-[1.1]">
+              You&apos;re serva files are saving you{" "}
+              <span className="font-semibold">
+                {formatFileSize(totalSavedBytes)}
+              </span>{" "}
+              of space!
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* What's next section — encoding only */}
       {!isDecoding && (
