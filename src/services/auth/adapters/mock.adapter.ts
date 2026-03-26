@@ -4,6 +4,7 @@ import type { AuthProvider } from "../auth.provider";
 const MOCK_USER: AuthUser = {
   id: "mock-user-001",
   email: "dev@servamind.com",
+  name: null,
   planType: "free",
   subscriptionStatus: "active",
   betaTierActive: true,
@@ -36,6 +37,10 @@ export function createMockAuthProvider(): AuthProvider {
       currentUser = MOCK_USER;
       listeners.forEach((cb) => cb(currentUser));
       return currentUser;
+    },
+
+    async refreshUser() {
+      // No-op for mock
     },
 
     async signOut() {

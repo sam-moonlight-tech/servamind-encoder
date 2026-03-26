@@ -7,6 +7,7 @@ function toAuthUser(response: GoogleCallbackResponse): AuthUser {
   return {
     id: response.user_id,
     email: response.email,
+    name: response.name ?? null,
     planType: response.plan_type,
     subscriptionStatus: response.subscription_status,
     betaTierActive: response.beta_tier_active,
@@ -51,6 +52,16 @@ export function createGoogleAuthProvider(): AuthProvider {
       currentUser = toAuthUser(response);
       listeners.forEach((cb) => cb(currentUser));
       return currentUser;
+    },
+
+    async refreshUser() {
+      try {
+        const response = await authService.getMe();
+        currentUser = toAuthUser(response);
+        listeners.forEach((cb) => cb(currentUser));
+      } catch {
+        // ignore
+      }
     },
 
     async signOut() {

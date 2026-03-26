@@ -23,6 +23,7 @@ interface AuthContextValue {
   apiKeyInfo: ApiKeyInfo | null;
   signIn: (credentials?: SignInCredentials) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   createApiKey: () => Promise<ApiKeyInfo>;
   revokeApiKey: () => Promise<void>;
   setApiKey: (key: string | null) => void;
@@ -76,6 +77,10 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     // API keys survive sign-out — they're used by CLI independently
   }, [provider]);
 
+  const refreshUser = useCallback(async () => {
+    await provider.refreshUser();
+  }, [provider]);
+
   const createApiKeyFn = useCallback(async (): Promise<ApiKeyInfo> => {
     const response = await authService.createApiKey();
     const info: ApiKeyInfo = {
@@ -118,11 +123,12 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       apiKeyInfo,
       signIn,
       signOut,
+      refreshUser,
       createApiKey: createApiKeyFn,
       revokeApiKey: revokeApiKeyFn,
       setApiKey,
     }),
-    [user, isLoading, apiKey, apiKeyInfo, signIn, signOut, createApiKeyFn, revokeApiKeyFn, setApiKey]
+    [user, isLoading, apiKey, apiKeyInfo, signIn, signOut, refreshUser, createApiKeyFn, revokeApiKeyFn, setApiKey]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -7,12 +7,15 @@ import type {
   EmailSendLinkResponse,
   EmailVerifyPayload,
   OnboardingSeenUpdate,
+  ProfileNameUpdatePayload,
 } from "@/types/api.types";
 import type { HttpClient } from "./client";
 
 export interface AuthService {
   googleCallback(payload: GoogleCallbackPayload): Promise<GoogleCallbackResponse>;
   getMe(): Promise<GoogleCallbackResponse>;
+  updateProfile(payload: ProfileNameUpdatePayload): Promise<GoogleCallbackResponse>;
+  deleteAccount(): Promise<void>;
   sendEmailLink(payload: EmailSendLinkPayload): Promise<EmailSendLinkResponse>;
   verifyEmailToken(payload: EmailVerifyPayload): Promise<GoogleCallbackResponse>;
   logout(): Promise<void>;
@@ -30,6 +33,14 @@ export function createAuthService(client: HttpClient): AuthService {
 
     getMe() {
       return client.get<GoogleCallbackResponse>("/auth/me");
+    },
+
+    updateProfile(payload) {
+      return client.patch<GoogleCallbackResponse>("/auth/me", payload);
+    },
+
+    deleteAccount() {
+      return client.del<void>("/auth/me");
     },
 
     sendEmailLink(payload) {

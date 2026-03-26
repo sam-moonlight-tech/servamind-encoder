@@ -13,5 +13,6 @@ export interface AuthProvider {
   getAuthHeaders(): Record<string, string>;
   signIn(credentials?: SignInCredentials): Promise<AuthUser>;
   signOut(): Promise<void>;
+  refreshUser(): Promise<void>;
   onAuthStateChange(callback: (user: AuthUser | null) => void): () => void;
 }

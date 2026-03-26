@@ -13,7 +13,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUsage } from "@/hooks/data/useUsage";
 import { usePaymentMethods } from "@/hooks/data/usePaymentMethods";
 import { Button } from "@/components/ui/Button";
+import { Dialog } from "@/components/ui";
 import { formatFileSize } from "@/services/file/format";
+import { authService } from "@/services/api";
 import { cn } from "@/lib/utils";
 
 type SettingsSection = "profile" | "billing";
@@ -26,7 +28,7 @@ function Skeleton({ className }: { className?: string }) {
 }
 
 function SettingsPage() {
-  const { user } = useAuth();
+  const { user, signOut, refreshUser } = useAuth();
   const { data: usage, isPending } = useUsage();
   const { data: paymentMethodsData } = usePaymentMethods();
   const navigate = useNavigate();
@@ -72,10 +74,12 @@ function SettingsPage() {
     }
   };
 
-  const displayName = user?.email?.split("@")[0] ?? "";
+  const displayName = user?.name ?? user?.email?.split("@")[0] ?? "";
   const displayEmail = user?.email ?? "";
   const [nameValue, setNameValue] = useState(displayName);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteState, setDeleteState] = useState<"idle" | "deleting">("idle");
 
   // Sync name when user loads
   useEffect(() => {
@@ -85,11 +89,27 @@ function SettingsPage() {
   const handleSave = useCallback(async () => {
     if (saveState !== "idle") return;
     setSaveState("saving");
-    // TODO: wire to profile update API when available
-    await new Promise((r) => setTimeout(r, 800));
-    setSaveState("saved");
-    setTimeout(() => setSaveState("idle"), 2000);
-  }, [saveState]);
+    try {
+      await authService.updateProfile({ name: nameValue.trim() });
+      await refreshUser();
+      setSaveState("saved");
+      setTimeout(() => setSaveState("idle"), 2000);
+    } catch {
+      setSaveState("idle");
+    }
+  }, [saveState, nameValue]);
+
+  const handleDeleteAccount = useCallback(async () => {
+    if (deleteState !== "idle") return;
+    setDeleteState("deleting");
+    try {
+      await authService.deleteAccount();
+      setShowDeleteModal(false);
+      signOut();
+    } catch {
+      setDeleteState("idle");
+    }
+  }, [deleteState, signOut]);
 
   const [now] = useState(() => new Date());
   const resetDate = usage?.quota_resets_at
@@ -113,12 +133,13 @@ function SettingsPage() {
         </div>
         <ContentPanel contentClassName="py-6 px-4 md:px-6">
           {activeSection === "profile" && (
+            <>
             <div>
               <h1 className="text-xl font-semibold text-serva-gray-600 leading-[1.1] mb-8 md:mb-16">
                 Your profile
               </h1>
 
-              <div className="max-w-full md:max-w-[394px] ml-0 md:ml-[10%] space-y-8">
+              <div className="max-w-full md:max-w-[394px] ml-0 md:ml-[130px] space-y-8">
                 <div>
                   <label className="block text-sm font-medium text-serva-gray-600 mb-1">
                     Name
@@ -168,8 +189,58 @@ function SettingsPage() {
                     {saveState === "saved" && "Saved"}
                   </Button>
                 </div>
+
+                {/* Manage account */}
+                <div className="pt-8 border-t border-light-200 mt-8 space-y-4">
+                  <p className="text-sm font-medium text-serva-gray-600">
+                    Manage account
+                  </p>
+                  <p className="text-xs text-serva-gray-400">
+                    If you sign up with the same email, it will not reset your usage.
+                  </p>
+                  <div className="pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteModal(true)}
+                      className="text-sm font-semibold text-[#660000] cursor-pointer bg-transparent border-none p-0 hover:text-[#880000] transition-colors"
+                    >
+                      Delete my account
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <Dialog open={showDeleteModal} onClose={() => { setShowDeleteModal(false); setDeleteState("idle"); }} className="max-w-[420px]">
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-4">
+                  <h2 className="text-sm font-semibold text-serva-gray-600">
+                    Delete account
+                  </h2>
+                  <p className="text-xs text-serva-gray-400">
+                    Are you sure you want to delete your account?
+                  </p>
+                </div>
+                <div className="flex items-center justify-end gap-3">
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={() => { setShowDeleteModal(false); setDeleteState("idle"); }}
+                  >
+                    Cancel
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteAccount}
+                    disabled={deleteState === "deleting"}
+                    className="bg-[#660000] text-light-200 rounded-[8px] px-3 h-[36px] text-sm font-semibold cursor-pointer hover:bg-[#550000] transition-colors disabled:opacity-50"
+                  >
+                    {deleteState === "deleting" ? "Deleting\u2026" : "Yes, delete my account"}
+                  </button>
+                </div>
+              </div>
+            </Dialog>
+            </>
           )}
 
           {activeSection === "billing" && (
@@ -213,7 +284,7 @@ function SettingsPage() {
               {billingTab === "overview" && (
                 <>
                   {isPending ? (
-                    <div className="max-w-[805px] ml-0 md:ml-[10%] space-y-8">
+                    <div className="max-w-[805px] ml-0 md:ml-[130px] space-y-8">
                       <Skeleton className="h-5 w-32" />
                       <Skeleton className="h-4 w-24" />
                       <Skeleton className="h-3 w-64" />
@@ -237,7 +308,7 @@ function SettingsPage() {
                       });
 
                       return (
-                        <div className="max-w-[805px] ml-0 md:ml-[10%] flex flex-col gap-8">
+                        <div className="max-w-[805px] ml-0 md:ml-[130px] flex flex-col gap-8">
                           {/* Usage Details heading */}
                           <p className="text-base font-semibold text-serva-gray-600">
                             Usage Details

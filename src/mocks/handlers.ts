@@ -23,14 +23,17 @@ const baseUrl = env.apiUrl;
 // Counter to simulate per-file failures (every 2nd encode init fails)
 let encodeInitCount = 0;
 
+// Mutable mock user state (persists across requests within a session)
+const mockUser = { ...mockGoogleCallbackResponse };
+
 export const handlers = [
   // Auth
   http.post(`${baseUrl}/auth/google/callback`, () => {
-    return HttpResponse.json(mockGoogleCallbackResponse);
+    return HttpResponse.json(mockUser);
   }),
 
   http.get(`${baseUrl}/auth/me`, () => {
-    return HttpResponse.json(mockGoogleCallbackResponse);
+    return HttpResponse.json(mockUser);
   }),
 
   http.post(`${baseUrl}/auth/email/send-link`, async () => {
@@ -41,6 +44,16 @@ export const handlers = [
   http.post(`${baseUrl}/auth/email/verify`, async () => {
     await delay(300);
     return HttpResponse.json(mockEmailVerifyResponse);
+  }),
+
+  http.patch(`${baseUrl}/auth/me`, async ({ request }) => {
+    const body = await request.json() as { name?: string };
+    if (body.name !== undefined) mockUser.name = body.name;
+    return HttpResponse.json(mockUser);
+  }),
+
+  http.delete(`${baseUrl}/auth/me`, () => {
+    return new HttpResponse(null, { status: 204 });
   }),
 
   http.patch(`${baseUrl}/auth/me/onboarding-seen`, () => {
@@ -119,6 +132,14 @@ export const handlers = [
 
   http.get(`${baseUrl}/api/stripe/payment-methods`, () => {
     return HttpResponse.json(mockListPaymentMethodsResponse);
+  }),
+
+  http.post(`${baseUrl}/api/stripe/payment-methods/default`, () => {
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.delete(`${baseUrl}/api/stripe/payment-methods/:paymentMethodId`, () => {
+    return new HttpResponse(null, { status: 204 });
   }),
 
   // Health

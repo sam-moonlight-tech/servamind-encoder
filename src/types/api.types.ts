@@ -16,12 +16,17 @@ export interface GoogleCallbackPayload {
 export interface GoogleCallbackResponse {
   user_id: string;
   email: string;
+  name: string | null;
   plan_type: "free" | "premium";
   subscription_status: "active" | "canceled" | "past_due" | "none";
   beta_tier_active: boolean;
   beta_enrolled_at: string | null;
   onboarding_seen: boolean;
   created_at: string;
+}
+
+export interface ProfileNameUpdatePayload {
+  name: string;
 }
 
 export interface OnboardingSeenUpdate {

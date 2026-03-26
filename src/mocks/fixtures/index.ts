@@ -20,6 +20,7 @@ import type {
 export const mockGoogleCallbackResponse: GoogleCallbackResponse = {
   user_id: "dev-user",
   email: "dev@example.com",
+  name: null,
   plan_type: "free",
   subscription_status: "active",
   beta_tier_active: true,
@@ -36,6 +37,7 @@ export const mockEmailSendLinkResponse: EmailSendLinkResponse = {
 export const mockEmailVerifyResponse: GoogleCallbackResponse = {
   user_id: "dev-user-email",
   email: "dev@example.com",
+  name: null,
   plan_type: "free",
   subscription_status: "active",
   beta_tier_active: true,

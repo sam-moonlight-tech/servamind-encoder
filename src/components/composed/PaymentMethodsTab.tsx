@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { usePaymentMethods } from "@/hooks/data";
+import { useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { usePaymentMethods, queryKeys } from "@/hooks/data";
+import { billingService } from "@/services/api";
 import { AddPaymentMethodForm } from "./AddPaymentMethodForm";
 import type { PaymentMethod } from "@/types/api.types";
 
@@ -44,6 +46,7 @@ function PaymentMethodLabel({ pm }: { pm: PaymentMethod }) {
 
 function PaymentMethodsTab({ onPaymentMethodAdded }: PaymentMethodsTabProps) {
   const { data, isPending } = usePaymentMethods();
+  const queryClient = useQueryClient();
   const methods = data?.payment_methods;
   const hasMethods = methods && methods.length > 0;
   const [showForm, setShowForm] = useState(false);
@@ -53,8 +56,18 @@ function PaymentMethodsTab({ onPaymentMethodAdded }: PaymentMethodsTabProps) {
     onPaymentMethodAdded?.();
   };
 
+  const handleSetDefault = useCallback(async (paymentMethodId: string) => {
+    await billingService.setDefaultPaymentMethod(paymentMethodId);
+    queryClient.invalidateQueries({ queryKey: queryKeys.paymentMethods });
+  }, [queryClient]);
+
+  const handleDelete = useCallback(async (paymentMethodId: string) => {
+    await billingService.deletePaymentMethod(paymentMethodId);
+    queryClient.invalidateQueries({ queryKey: queryKeys.paymentMethods });
+  }, [queryClient]);
+
   return (
-    <div className="max-w-[805px] ml-0 md:ml-[10%]">
+    <div className="max-w-[805px] ml-0 md:ml-[130px]">
       <div className="flex flex-col items-start w-full md:w-[300px] pt-3 gap-3">
         {isPending ? (
           <>
@@ -77,13 +90,14 @@ function PaymentMethodsTab({ onPaymentMethodAdded }: PaymentMethodsTabProps) {
                     <div className="flex items-center justify-between w-full">
                       <PaymentMethodLabel pm={pm} />
                       {pm.is_default ? (
-                        <span className="bg-serva-gray-600 text-white text-xs font-semibold px-3 py-1 rounded-[4px] leading-[1.4]">
+                        <span className="bg-serva-gray-600 text-white text-xs font-semibold h-6 px-3 flex items-center justify-center rounded-[4px] leading-[1.4]">
                           Default
                         </span>
                       ) : (
                         <button
                           type="button"
-                          className="bg-light-300 text-serva-gray-600 text-xs font-semibold px-3 py-1 rounded-[4px] leading-[1.4] cursor-pointer hover:bg-light-200 transition-colors"
+                          onClick={() => handleSetDefault(pm.id)}
+                          className="bg-light-300 text-serva-gray-600 text-xs font-semibold h-6 px-3 flex items-center justify-center rounded-[4px] leading-[1.4] cursor-pointer hover:bg-light-200 transition-colors"
                         >
                           Make Default
                         </button>
@@ -91,6 +105,7 @@ function PaymentMethodsTab({ onPaymentMethodAdded }: PaymentMethodsTabProps) {
                     </div>
                     <button
                       type="button"
+                      onClick={() => handleDelete(pm.id)}
                       className="text-xs font-medium text-[#660000] text-left cursor-pointer hover:text-[#880000] transition-colors"
                     >
                       Delete

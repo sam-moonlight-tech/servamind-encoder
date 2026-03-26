@@ -5,6 +5,7 @@ export type ProcessType = "compress" | "decompress";
 export interface AuthUser {
   id: string;
   email: string;
+  name: string | null;
   planType: string;
   subscriptionStatus: string;
   betaTierActive: boolean;
