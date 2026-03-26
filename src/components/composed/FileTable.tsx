@@ -112,14 +112,12 @@ function DownloadIcon() {
       viewBox="0 0 16 16"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       className="shrink-0"
     >
-      <path d="M14 10v2.667A1.334 1.334 0 0112.667 14H3.333A1.334 1.334 0 012 12.667V10" />
-      <path d="M4.667 6.667L8 10l3.333-3.333" />
-      <path d="M8 10V2" />
+      <path d="M4 13.3334L12 13.3334" />
+      <path d="M8.00033 2.66663V10.6666M8.00033 10.6666L10.3337 8.33329M8.00033 10.6666L5.66699 8.33329" />
     </svg>
   );
 }
@@ -129,9 +127,9 @@ function HoloProgressBar({ value, indeterminate }: { value: number; indeterminat
   return (
     <div className="w-[60px] md:w-[120px] h-[4px] bg-light-200 rounded-[12px] overflow-hidden shrink-0">
       <div
-        className={cn("h-full rounded-[12px]", indeterminate && "animate-pulse")}
+        className={cn("h-full rounded-[12px]", indeterminate && "animate-progress-slide")}
         style={{
-          width: indeterminate ? "70%" : `${clampedValue}%`,
+          width: indeterminate ? "60%" : `${clampedValue}%`,
           backgroundImage:
             "linear-gradient(90deg, var(--color-holo-green) 0%, var(--color-holo-seafoam) 20%, var(--color-holo-blue) 40%, var(--color-holo-pink) 60%, var(--color-holo-orange) 80%, var(--color-holo-yellow) 100%)",
         }}
@@ -182,38 +180,28 @@ function FileRow({
           </span>
         </div>
 
-        {/* Size info — left-aligned on mobile (flush with icon), inline on desktop */}
-        {isDone && file.encodedSize ? (
-          <div className="flex items-center gap-1 text-sm leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
-            <span className="text-serva-gray-400">
-              Encoded: {file.encodedSize}
-            </span>
-            {file.reductionPercent != null && (
-              <span className="text-serva-green font-semibold">
-                (-{Math.abs(file.reductionPercent)}%)
+        {/* Size info — mobile: encoded only; desktop: original + encoded inline */}
+        <div className="flex items-center text-sm leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
+          <span className="hidden md:inline text-serva-gray-400 md:w-[140px]">
+            Original: {file.formattedSize}
+          </span>
+          {isDone && file.encodedSize ? (
+            <div className="flex items-center gap-1">
+              <span className="text-serva-gray-400">
+                Encoded: {file.encodedSize}
               </span>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center text-sm leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
-            <span className="text-serva-gray-400 md:w-[140px]">
-              Original: {file.formattedSize}
-            </span>
-            {/* Desktop: show encoded info inline */}
-            {isEncoded && file.encodedSize && (
-              <div className="hidden md:flex items-center gap-1">
-                <span className="text-serva-gray-400">
-                  Encoded: {file.encodedSize}
+              {file.reductionPercent != null && (
+                <span className="text-serva-green font-semibold">
+                  (-{Math.abs(file.reductionPercent)}%)
                 </span>
-                {file.reductionPercent != null && (
-                  <span className="text-serva-gray-200">
-                    (-{Math.abs(file.reductionPercent)}%)
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          ) : (
+            <span className="md:hidden text-serva-gray-400">
+              {file.formattedSize}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Right side: status */}
@@ -253,7 +241,7 @@ function FileRow({
                 e.stopPropagation();
                 onDownload(index);
               }}
-              className="flex md:hidden items-center justify-center size-[36px] bg-light-300 rounded-[4px] text-serva-gray-600 cursor-pointer hover:bg-light-200 transition-colors"
+              className="flex md:hidden items-center justify-center size-[36px] p-3 bg-light-300 rounded-[4px] text-serva-gray-600 cursor-pointer hover:bg-light-200 transition-colors"
             >
               <DownloadIcon />
             </button>
@@ -330,27 +318,26 @@ function FileRow({
 function FileTable({ files, encoding, processLabel, onRemove, onDownload, className }: FileTableProps) {
   if (encoding) {
     return (
-      <div className={cn("relative rounded-[16px] p-[2px]", className)}>
-        {/* Animated holographic border — colors cycle via @property --holo-angle */}
-        <div
-          className="absolute inset-0 rounded-[16px] animate-holo-spin"
-          style={{
-            backgroundImage:
-              "conic-gradient(from var(--holo-angle), var(--color-holo-green), var(--color-holo-seafoam), var(--color-holo-blue), var(--color-holo-pink), var(--color-holo-orange), var(--color-holo-yellow), var(--color-holo-green))",
-          }}
-        />
-        <div className="relative rounded-[14px] overflow-clip">
-          {files.map((file, i) => (
-            <FileRow
-              key={`${file.name}-${i}`}
-              file={file}
-              index={i}
-              processLabel={processLabel}
-              onRemove={file.status === "error" ? onRemove : undefined}
-              onDownload={onDownload}
-            />
-          ))}
-        </div>
+      <div
+        className={cn("rounded-[16px] overflow-y-auto scrollbar-none animate-holo-spin", className)}
+        style={{
+          border: "2px solid transparent",
+          backgroundImage:
+            "linear-gradient(white, white), conic-gradient(from var(--holo-angle), var(--color-holo-green), var(--color-holo-seafoam), var(--color-holo-blue), var(--color-holo-pink), var(--color-holo-orange), var(--color-holo-yellow), var(--color-holo-green))",
+          backgroundOrigin: "border-box",
+          backgroundClip: "padding-box, border-box",
+        }}
+      >
+        {files.map((file, i) => (
+          <FileRow
+            key={`${file.name}-${i}`}
+            file={file}
+            index={i}
+            processLabel={processLabel}
+            onRemove={file.status === "error" ? onRemove : undefined}
+            onDownload={onDownload}
+          />
+        ))}
       </div>
     );
   }
@@ -358,7 +345,7 @@ function FileTable({ files, encoding, processLabel, onRemove, onDownload, classN
   return (
     <div
       className={cn(
-        "border border-light-200 rounded-[16px] overflow-clip",
+        "border border-light-200 rounded-[16px] overflow-clip scrollbar-none",
         className
       )}
     >

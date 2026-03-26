@@ -71,7 +71,7 @@ function FileTableActionBar({
         >
           <BackArrowIcon />
         </button>
-        <h1 className="text-lg md:text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] whitespace-nowrap">
+        <h1 className="text-lg md:text-xl font-semibold text-serva-gray-600 leading-[1.1] whitespace-nowrap">
           {fileCount} {fileCount === 1 ? "file" : "files"} ready to {verb}
         </h1>
       </div>

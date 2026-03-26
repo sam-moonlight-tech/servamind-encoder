@@ -54,6 +54,7 @@
   /* Animations */
   --animate-holo-spin: holo-spin 3s linear infinite;
   --animate-shimmer: shimmer 1.5s ease-in-out infinite;
+  --animate-progress-slide: progress-slide 1.8s ease-in-out infinite;
   --animate-fade-in: fade-in 0.3s ease-out;
   --animate-slide-up: slide-up 0.4s ease-out;
   --animate-dialog-in: dialog-in 0.2s ease-out;
@@ -82,6 +83,18 @@
   }
   100% {
     opacity: 0.5;
+  }
+}
+
+@keyframes progress-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(60%);
+  }
+  100% {
+    transform: translateX(-100%);
   }
 }
 
