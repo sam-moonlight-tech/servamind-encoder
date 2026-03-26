@@ -105,7 +105,7 @@ export const mockPublicStatsResponse: PublicStatsResponse = {
   platform_total_input_bytes: 10_737_418_240,
   platform_total_output_bytes: 5_368_709_120,
   platform_total_savings_bytes: 5_368_709_120,
-  platform_average_compression_ratio: 0.5,
+  platform_average_compression_ratio: 50.0,
   platform_total_files_encoded: 12847,
 };
 

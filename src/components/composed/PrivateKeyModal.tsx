@@ -119,7 +119,7 @@ function PrivateKeyModal({ open, mode = "encrypt", onClose, onConfirm }: Private
   const content = (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className={cn("flex flex-col items-start", isReadOnly ? "gap-4" : "gap-3")}>
+      <div className="flex flex-col items-start gap-3">
         <h2 className="text-sm font-semibold text-serva-gray-600">
           {heading}
         </h2>

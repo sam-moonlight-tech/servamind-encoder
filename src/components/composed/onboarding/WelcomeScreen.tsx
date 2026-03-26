@@ -9,7 +9,7 @@ function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
     <div className="flex flex-col items-center text-center gap-6">
       <ServamindIcon size={32} />
 
-      <h1 className="text-xl font-semibold text-serva-gray-600 leading-[1.1] tracking-[-0.6px]">
+      <h1 className="text-xl font-semibold text-serva-gray-600 leading-[1.1]">
         Welcome to Servamind
       </h1>
 

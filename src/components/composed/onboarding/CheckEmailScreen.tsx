@@ -31,7 +31,7 @@ function CheckEmailScreen({ email, onUseAnotherEmail, onMockVerify }: CheckEmail
         </span>
       </div>
 
-      <h1 className="text-xl font-semibold text-serva-gray-600 leading-[1.1] tracking-[-0.6px]">
+      <h1 className="text-xl font-semibold text-serva-gray-600 leading-[1.1]">
         Check your email to continue
       </h1>
 

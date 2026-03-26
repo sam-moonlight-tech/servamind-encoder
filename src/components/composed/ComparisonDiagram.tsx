@@ -119,8 +119,8 @@ function ComparisonDiagram({ className }: ComparisonDiagramProps) {
   return (
     <div className={cn("flex flex-col items-center gap-12 mt-10 pb-12 md:px-0", className)}>
       {/* Section heading */}
-      <div className="flex flex-col items-center gap-6">
-        <h3 className="text-2xl md:text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.2] text-center">
+      <div className="flex flex-col items-center gap-4">
+        <h3 className="text-2xl md:text-xl font-semibold text-serva-gray-600 leading-[1.2] text-center">
           Then never preprocess the data again
         </h3>
         <p className="text-sm text-serva-gray-400 text-center leading-[1.4] tracking-[-0.42px] max-w-[371px]">
