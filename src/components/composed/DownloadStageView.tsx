@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Button } from "@/components/ui";
 import { FileTable } from "./FileTable";
 import { cn } from "@/lib/utils";
 import { formatFileSize } from "@/services/file";
+import { useWorkflow } from "@/contexts/WorkflowContext";
 import type { ProcessType, FileResult, FileTableItem } from "@/types/domain.types";
 
 interface DownloadStageViewProps {
@@ -14,7 +15,7 @@ interface DownloadStageViewProps {
   className?: string;
 }
 
-function DocumentIcon() {
+function GoogleDocsIcon() {
   return (
     <svg
       width="16"
@@ -27,9 +28,8 @@ function DocumentIcon() {
       strokeLinejoin="round"
       className="shrink-0"
     >
-      <path d="M9.333 2H5.333A1.333 1.333 0 004 3.333v9.334A1.333 1.333 0 005.333 14h5.334A1.333 1.333 0 0012 12.667V4.667L9.333 2z" />
-      <path d="M9.333 2v2.667H12" />
-      <path d="M6 6h4M6 8h4M6 10h2" />
+      <rect x="3" y="2" width="10" height="12" rx="1.5" />
+      <path d="M5.5 5h5M5.5 8h5M5.5 11h2.5" />
     </svg>
   );
 }
@@ -47,9 +47,9 @@ function DownloadIcon() {
       strokeLinejoin="round"
       className="shrink-0"
     >
-      <path d="M14 10v2.667A1.334 1.334 0 0112.667 14H3.333A1.334 1.334 0 012 12.667V10" />
-      <path d="M4.667 6.667L8 10l3.333-3.333" />
-      <path d="M8 10V2" />
+      <path d="M4 13h8" />
+      <path d="M5.5 7L8 9.5 10.5 7" />
+      <path d="M8 9.5V2.5" />
     </svg>
   );
 }
@@ -95,18 +95,7 @@ function ServaEncoderBadgeIcon() {
       fill="none"
       className="shrink-0"
     >
-      <rect width="14" height="14" rx="2.5" fill="white" fillOpacity="0.9" />
-      <text
-        x="7"
-        y="10"
-        textAnchor="middle"
-        fill="#51a500"
-        fontSize="6.5"
-        fontFamily="monospace"
-        fontWeight="bold"
-      >
-        S
-      </text>
+      <path d="M13.0737 3.52225V1.85255H11.7421C10.4946 0.702526 8.8297 0 7 0C5.1703 0 3.50541 0.702526 2.25795 1.85255H0.926277V3.52225C0.338031 4.54717 0 5.73449 0 7C0 8.26551 0.338031 9.45283 0.926277 10.4777V14H13.0737V10.4777C13.662 9.45283 14 8.26551 14 7C14 5.73449 13.662 4.54717 13.0737 3.52225ZM12.1114 3.79292V10.2083C11.9959 10.3911 11.8696 10.5656 11.736 10.7352L7.77591 2.81612H11.3451C11.6326 3.11445 11.8888 3.44166 12.1114 3.79292ZM7 0.962365C8.15363 0.962365 9.23389 1.28837 10.1517 1.85255H3.84826C4.76611 1.28837 5.84516 0.962365 7 0.962365ZM1.88864 3.79292C2.10998 3.44045 2.36742 3.11325 2.65492 2.81612H6.22409L2.26396 10.7352C2.13043 10.5656 2.00412 10.3911 1.88864 10.2083V3.79292ZM2.96529 11.4834L7 3.41519L11.0347 11.4834C9.96529 12.4482 8.55181 13.0376 7 13.0376C5.44819 13.0376 4.03592 12.447 2.96529 11.4834Z" fill="white" fillOpacity="0.9" />
     </svg>
   );
 }
@@ -126,6 +115,7 @@ function DownloadStageView({
   className,
 }: DownloadStageViewProps) {
   const isDecoding = process === "decompress";
+  const { isScrolled } = useWorkflow();
 
   // Calculate total space saved across all files (bytes)
   const totalSavedBytes = useMemo(() => {
@@ -172,23 +162,49 @@ function DownloadStageView({
     onDownload(result.fileId, displayName);
   };
 
+  const handleDownloadReport = useCallback(() => {
+    const headers = ["File Name", "Original Size (bytes)", "Encoded Size (bytes)", "Reduction (%)", "Duration (s)"];
+    const rows = fileResults.map((r) => {
+      const reduction = r.encodedSize !== null && r.originalSize > 0
+        ? Math.round(((r.originalSize - r.encodedSize) / r.originalSize) * 100)
+        : "";
+      const duration = r.durationMs !== null ? (r.durationMs / 1000).toFixed(1) : "";
+      return [
+        r.fileName,
+        r.originalSize,
+        r.encodedSize ?? "",
+        reduction,
+        duration,
+      ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",");
+    });
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `servamind-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [fileResults]);
+
   return (
     <div className={cn("space-y-0", className)}>
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between py-5 px-4 gap-3">
-        <div className="flex items-center gap-2">
-          <h1 className="text-lg md:text-xl font-semibold text-serva-gray-600 tracking-[-0.6px] leading-[1.1] whitespace-nowrap">
+      <div className={cn("flex items-center justify-between py-5 px-4 sticky top-0 bg-white z-10", isScrolled && "border-b border-light-200")}>
+        <div className="flex items-center justify-between md:justify-start gap-2 flex-1 md:flex-initial">
+          <h1 className="text-lg md:text-xl font-semibold text-serva-gray-600 leading-[1.1] whitespace-nowrap">
             {isDecoding ? "Decoding complete" : "Encoding complete"}
           </h1>
           <Button variant="secondary" size="md" onClick={onReset}>
-            {isDecoding ? "Decode more files" : "Encode more files"}
+            <span className="hidden md:inline">{isDecoding ? "Decode more files" : "Encode more files"}</span>
+            <span className="md:hidden">{isDecoding ? "Decode more" : "Encode more"}</span>
           </Button>
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap">
-          <Button variant="secondary" size="md">
+        <div className="hidden md:flex items-center gap-4">
+          <Button variant="secondary" size="md" onClick={handleDownloadReport}>
             Download report
-            <DocumentIcon />
+            <GoogleDocsIcon />
           </Button>
           <Button size="md" onClick={onDownloadAll}>
             Download all
@@ -202,6 +218,7 @@ function DownloadStageView({
         <FileTable
           files={fileTableItems}
           onDownload={handleDownloadByIndex}
+          className="max-h-[448px] overflow-y-auto"
         />
       </div>
 
@@ -226,11 +243,23 @@ function DownloadStageView({
         </div>
       )}
 
+      {/* Mobile: download buttons below banner */}
+      <div className="flex md:hidden items-center gap-4 px-4 pb-6">
+        <Button variant="secondary" size="md" onClick={handleDownloadReport}>
+          Download report
+          <GoogleDocsIcon />
+        </Button>
+        <Button size="md" onClick={onDownloadAll} className="flex-1 justify-center">
+          Download all
+          <DownloadIcon />
+        </Button>
+      </div>
+
       {/* What's next section — encoding only */}
       {!isDecoding && (
         <div className="flex flex-col items-center gap-12 py-10 px-6">
-          <div className="flex flex-col items-center gap-6">
-            <p className="text-lg md:text-xl font-semibold tracking-[-0.6px] leading-[1.2]">
+          <div className="flex flex-col items-center gap-[20px]">
+            <p className="text-lg md:text-xl font-semibold leading-[1.2]">
               <span className="text-serva-gray-400">What&apos;s next? </span>
               <span className="text-serva-gray-600">
                 Train with your .serva files
