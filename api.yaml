@@ -510,6 +510,12 @@ components:
 
     StreamCompleteResponse:
       type: object
+      required:
+        - status
+        - file_id
+        - original_size_bytes
+        - encoded_size_bytes
+        - savings_percent
       properties:
         status:
           type: string
@@ -526,13 +532,16 @@ components:
         encoded_size_bytes:
           type: integer
           format: int64
-          description: Size of the encoded (pre-encryption) data in bytes.
-          example: 8388608
-        file_size_bytes:
-          type: integer
-          format: int64
-          description: Size of the final encrypted `.serva` file in bytes.
+          description: Size of the final encrypted `.serva` file in bytes (download size).
           example: 8388640
+        savings_percent:
+          type: number
+          format: float
+          description: |
+            Space savings vs original input:
+            `((original_size_bytes - encoded_size_bytes) / original_size_bytes) * 100`.
+            May be negative if the encoded file is larger than the original.
+          example: 48.2422
 
     # ── Decode ────────────────────────────────────────────────────────────────
 
