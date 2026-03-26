@@ -15,6 +15,7 @@ interface NavBarProps {
   onNavigateProfile?: () => void;
   onNavigateBilling?: () => void;
   onMenuOpen?: () => void;
+  isSettingsPage?: boolean;
   className?: string;
 }
 
@@ -129,7 +130,7 @@ function HamburgerIcon() {
   );
 }
 
-function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSettings, onNavigateProfile, onNavigateBilling, onMenuOpen, className }: NavBarProps) {
+function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSettings, onNavigateProfile, onNavigateBilling, onMenuOpen, isSettingsPage, className }: NavBarProps) {
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const avatarRef = useRef<HTMLButtonElement>(null);
 
@@ -165,14 +166,17 @@ function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSetting
         <button type="button" onClick={onNavigateDashboard} className="bg-transparent border-none p-0 cursor-pointer">
           <ServamindIconMark />
         </button>
-        <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-[#1c011e] text-white rounded-[3px] font-mono">
-          Beta
+        <span className="px-[6px] py-[4px] text-[11px] font-bold tracking-[-0.33px] uppercase bg-[#1c011e] text-white rounded-[2px] font-mono leading-[1.4]">
+          BETA
         </span>
       </div>
 
-      {/* Desktop: full logo */}
-      <button type="button" onClick={onNavigateDashboard} className="hidden md:block bg-transparent border-none p-0 cursor-pointer">
+      {/* Desktop: full logo + BETA tag */}
+      <button type="button" onClick={onNavigateDashboard} className="hidden md:flex items-center gap-2 bg-transparent border-none p-0 cursor-pointer">
         <ServamindLogo />
+        <span className="px-[6px] py-[4px] text-[11px] font-bold tracking-[-0.33px] uppercase bg-[#1c011e] text-white rounded-[2px] font-mono leading-[1.4]">
+          BETA
+        </span>
       </button>
 
       <div className="flex items-center gap-4">
@@ -181,18 +185,23 @@ function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSetting
           <button
             type="button"
             onClick={onNavigateDashboard}
-            className="font-medium text-serva-gray-600 cursor-pointer bg-transparent border-none p-0"
+            className={cn("font-medium cursor-pointer bg-transparent border-none p-0", isSettingsPage ? "text-serva-gray-400" : "text-serva-gray-600")}
           >
             Dashboard
           </button>
-          <span className="text-serva-gray-400" aria-hidden="true">
+          <a
+            href="https://servamind.mintlify.app/resnet-from-servas-tutorial"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-serva-gray-400 hover:text-serva-gray-600 transition-colors"
+          >
             Get Started
-          </span>
+          </a>
         </div>
 
         {/* Desktop gear icon */}
         <button
-          className="hidden md:flex items-center justify-center size-8 mx-1 cursor-pointer"
+          className="hidden md:flex items-center justify-center size-8 mx-1 cursor-pointer rounded-full hover:bg-light-200 transition-colors"
           aria-label="Settings"
           onClick={onNavigateSettings}
         >
@@ -205,7 +214,7 @@ function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSetting
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="text-serva-gray-400"
+            className={isSettingsPage ? "text-serva-gray-600" : "text-serva-gray-400"}
           >
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
