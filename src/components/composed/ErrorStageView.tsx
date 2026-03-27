@@ -4,10 +4,11 @@ import { EXTERNAL_LINKS } from "@/config/constants";
 
 interface ErrorStageViewProps {
   onReset: () => void;
+  errorMessage?: string | null;
   className?: string;
 }
 
-function ErrorStageView({ onReset, className }: ErrorStageViewProps) {
+function ErrorStageView({ onReset, errorMessage, className }: ErrorStageViewProps) {
   return (
     <div
       className={cn(
@@ -33,8 +34,7 @@ function ErrorStageView({ onReset, className }: ErrorStageViewProps) {
           Something Went Wrong
         </h3>
         <p className="mt-2 text-sm text-serva-gray-400">
-          An error occurred during processing. Please try again or contact
-          support if the issue persists.
+          {errorMessage ?? "An error occurred during processing. Please try again or contact support if the issue persists."}
         </p>
         <div className="mt-6 flex gap-3">
           <a

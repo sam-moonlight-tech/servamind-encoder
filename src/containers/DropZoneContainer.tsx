@@ -46,6 +46,7 @@ function DropZoneContainer() {
   const [encodingResults, setEncodingResults] = useState<Map<string, EncodingFileResult>>(() => cached?.encodingResults ?? new Map());
   const [encodingIndex, setEncodingIndex] = useState(() => cached?.encodingIndex ?? 0);
   const [fileProgress, setFileProgress] = useState<Map<string, number>>(new Map());
+  const [fileErrors, setFileErrors] = useState<Map<string, string>>(new Map());
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
 
@@ -191,6 +192,8 @@ function DropZoneContainer() {
             }
             stopSimulatedProgress(file);
             setStatus(file, "error");
+            const msg = err instanceof ApiError ? err.message : (err instanceof Error ? err.message : null);
+            if (msg) setFileErrors((prev) => new Map(prev).set(fileKey(file), `Encoding failed: ${msg}`));
           }
         }
         setProcess("compress");
@@ -228,6 +231,8 @@ function DropZoneContainer() {
             }
             stopSimulatedProgress(file);
             setStatus(file, "error");
+            const msg = err instanceof ApiError ? err.message : (err instanceof Error ? err.message : null);
+            if (msg) setFileErrors((prev) => new Map(prev).set(fileKey(file), `Decoding failed: ${msg}`));
           }
         }
         setProcess("decompress");
@@ -254,6 +259,7 @@ function DropZoneContainer() {
     setFileStatuses(new Map());
     setEncodingResults(new Map());
     setFileProgress(new Map());
+    setFileErrors(new Map());
     setEncodingIndex(0);
     fileStateCache.delete(process);
     setHasFile(false);
@@ -336,9 +342,13 @@ function DropZoneContainer() {
   const fileTableItems: FileTableItem[] = useMemo(() => {
     return files.map((file) => {
       const validation = validateFileSize(file);
-      const fileError = validation.valid ? null : (validation.message ?? null);
       const key = fileKey(file);
       const currentStatus = fileStatuses.get(key);
+      const fileError = !validation.valid
+        ? (validation.message ?? null)
+        : currentStatus === "error"
+          ? (fileErrors.get(key) ?? null)
+          : null;
       const status: FileTableItem["status"] = fileError
         ? "error"
         : currentStatus ?? "ready";
@@ -359,7 +369,7 @@ function DropZoneContainer() {
         durationSeconds: result ? result.durationMs / 1000 : undefined,
       };
     });
-  }, [files, fileStatuses, encodingResults, fileProgress]);
+  }, [files, fileStatuses, encodingResults, fileProgress, fileErrors]);
 
   return (
     <>

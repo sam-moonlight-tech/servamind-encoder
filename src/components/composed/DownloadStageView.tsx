@@ -259,9 +259,9 @@ function DownloadStageView({
       {!isDecoding && (
         <div className="flex flex-col items-center gap-12 py-10 px-6">
           <div className="flex flex-col items-center gap-[20px]">
-            <p className="text-lg md:text-xl font-semibold leading-[1.2]">
-              <span className="text-serva-gray-400">What&apos;s next? </span>
-              <span className="text-serva-gray-600">
+            <p className="text-lg md:text-xl font-semibold leading-[1.2] text-center">
+              <span className="text-serva-gray-400 block md:inline">What&apos;s next? </span>
+              <span className="text-serva-gray-600 block md:inline">
                 Train with your .serva files
               </span>
             </p>
@@ -319,7 +319,7 @@ function DownloadStageView({
                   </p>
                 </div>
                 <Button size="md">
-                  Train your Models
+                  Train your models
                   <ArrowRightIcon />
                 </Button>
               </div>

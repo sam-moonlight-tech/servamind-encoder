@@ -80,7 +80,9 @@ function TriangleIcon() {
 /** Square icon for Model C */
 function SquareIcon() {
   return (
-    <div className="size-[10px] md:size-[12px] shrink-0 border-[1.5px] border-core-purple" />
+    <svg width="10" height="10" viewBox="0 0 10 10" className="shrink-0 text-core-purple md:w-3 md:h-3">
+      <rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
   );
 }
 
@@ -121,7 +123,7 @@ function ComparisonDiagram({ className }: ComparisonDiagramProps) {
       {/* Section heading */}
       <div className="flex flex-col items-center gap-4">
         <h3 className="text-2xl md:text-xl font-semibold text-serva-gray-600 leading-[1.2] text-center">
-          Then never preprocess the data again
+          Then never preprocess your data again
         </h3>
         <p className="text-sm text-serva-gray-400 text-center leading-[1.4] tracking-[-0.42px] max-w-[371px]">
           Instead of rebuilding preprocessing for each pipeline, load your .serva

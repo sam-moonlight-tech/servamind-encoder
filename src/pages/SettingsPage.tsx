@@ -80,6 +80,7 @@ function SettingsPage() {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteState, setDeleteState] = useState<"idle" | "deleting">("idle");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Sync name when user loads
   useEffect(() => {
@@ -129,6 +130,8 @@ function SettingsPage() {
             sections={SETTINGS_SECTIONS}
             activeKey={activeSection}
             onSelect={handleSidebarSelect}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
           />
         </div>
         <ContentPanel contentClassName="py-6 px-4 md:px-6">

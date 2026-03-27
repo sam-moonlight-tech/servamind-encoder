@@ -29,6 +29,119 @@ function DocumentIcon() {
   );
 }
 
+function ImageIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-serva-gray-400 shrink-0"
+    >
+      <rect x="2" y="2" width="12" height="12" rx="1.5" />
+      <circle cx="5.5" cy="5.5" r="1.25" />
+      <path d="M14 10.5l-3-3L3 14" />
+    </svg>
+  );
+}
+
+function VideoIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-serva-gray-400 shrink-0"
+    >
+      <rect x="2" y="3" width="12" height="10" rx="1.5" />
+      <path d="M6.5 6v4l3.5-2-3.5-2z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function AudioIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-serva-gray-400 shrink-0"
+    >
+      <path d="M6 3v10M6 13a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 2v9M14 11a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM6 3l8-1" />
+    </svg>
+  );
+}
+
+function DataIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-serva-gray-400 shrink-0"
+    >
+      <ellipse cx="8" cy="4" rx="5" ry="2" />
+      <path d="M3 4v4c0 1.1 2.239 2 5 2s5-.9 5-2V4" />
+      <path d="M3 8v4c0 1.1 2.239 2 5 2s5-.9 5-2V8" />
+    </svg>
+  );
+}
+
+function ArchiveIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-serva-gray-400 shrink-0"
+    >
+      <rect x="2" y="2" width="12" height="3" rx="1" />
+      <path d="M3 5v8a1 1 0 001 1h8a1 1 0 001-1V5" />
+      <path d="M6.5 8h3" />
+    </svg>
+  );
+}
+
+const IMAGE_EXTS = new Set(["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff", "tif", "ico", "heic", "heif", "avif"]);
+const VIDEO_EXTS = new Set(["mp4", "mov", "avi", "mkv", "webm", "wmv", "flv", "m4v"]);
+const AUDIO_EXTS = new Set(["mp3", "wav", "flac", "aac", "ogg", "wma", "m4a"]);
+const DATA_EXTS = new Set(["csv", "json", "xml", "yaml", "yml", "tsv", "parquet", "arrow", "h5", "hdf5", "npy", "npz"]);
+const ARCHIVE_EXTS = new Set(["zip", "tar", "gz", "rar", "7z", "bz2", "xz"]);
+
+function getFileIcon(fileName: string) {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+  if (IMAGE_EXTS.has(ext)) return <ImageIcon />;
+  if (VIDEO_EXTS.has(ext)) return <VideoIcon />;
+  if (AUDIO_EXTS.has(ext)) return <AudioIcon />;
+  if (DATA_EXTS.has(ext)) return <DataIcon />;
+  if (ARCHIVE_EXTS.has(ext)) return <ArchiveIcon />;
+  return <DocumentIcon />;
+}
+
 function ServaIcon() {
   return (
     <svg
@@ -173,7 +286,7 @@ function FileRow({
       <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 min-w-0">
         <div className="flex items-start md:items-center gap-3 min-w-0">
           <span className="flex items-center justify-center w-4 h-4 mt-0.5 md:mt-0 shrink-0">
-            {isEncoded ? <ServaIcon /> : <DocumentIcon />}
+            {isEncoded ? <ServaIcon /> : getFileIcon(file.name)}
           </span>
           <span className="text-sm text-serva-gray-600 leading-[1.1] tracking-[-0.42px] truncate min-w-0 md:w-[250px]">
             {file.name}
@@ -182,7 +295,7 @@ function FileRow({
 
         {/* Size info — mobile: encoded only; desktop: original + encoded inline */}
         <div className="flex items-center text-sm leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
-          <span className="hidden md:inline text-serva-gray-400 md:w-[140px]">
+          <span className="text-serva-gray-400 md:w-[140px]">
             Original: {file.formattedSize}
           </span>
           {isDone && file.encodedSize ? (

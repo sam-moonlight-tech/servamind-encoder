@@ -15,7 +15,26 @@ interface SidebarProps {
   sections: SidebarSection[];
   activeKey: string;
   onSelect: (key: string) => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
   className?: string;
+}
+
+function CollapseIcon({ collapsed }: { collapsed: boolean }) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn("text-serva-gray-400 transition-transform", collapsed && "scale-x-[-1]")}
+    >
+      <path d="M15.8333 17.5H4.16667C3.24619 17.5 2.5 16.7538 2.5 15.8333L2.5 4.16667C2.5 3.24619 3.24619 2.5 4.16667 2.5L15.8333 2.5C16.7538 2.5 17.5 3.24619 17.5 4.16667V15.8333C17.5 16.7538 16.7538 17.5 15.8333 17.5Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7.91699 17.5V2.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
 function EncodeIcon() {
@@ -54,27 +73,32 @@ const SETTINGS_SECTIONS: SidebarSection[] = [
   },
 ];
 
-function Sidebar({ sections, activeKey, onSelect, className }: SidebarProps) {
+function Sidebar({ sections, activeKey, onSelect, collapsed, onToggleCollapse, className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "w-[184px] shrink-0 py-6 px-3 flex flex-col",
+        "shrink-0 py-6 px-3 flex flex-col transition-[width] duration-200",
+        collapsed ? "w-[52px]" : "w-[184px]",
         className
       )}
     >
       {sections.map((section) => (
         <div key={section.label} className="mb-6">
-          <p className="font-mono text-xs tracking-[0.48px] text-serva-gray-300 px-2 mb-2">
-            {section.label}
-          </p>
+          {!collapsed && (
+            <p className="font-mono text-xs tracking-[0.48px] text-serva-gray-300 px-2 mb-2">
+              {section.label}
+            </p>
+          )}
           <div className="flex flex-col gap-0.5">
             {section.items.map((item) => (
               <button
                 key={item.key}
                 type="button"
                 onClick={() => onSelect(item.key)}
+                title={collapsed ? item.label : undefined}
                 className={cn(
-                  "flex items-center gap-2 h-[32px] px-2 rounded-[4px] text-sm transition-colors cursor-pointer w-full text-left",
+                  "flex items-center gap-2 h-[32px] rounded-[4px] text-sm transition-colors cursor-pointer w-full",
+                  collapsed ? "justify-center px-0" : "px-2 text-left",
                   activeKey === item.key
                     ? "bg-light-200 text-serva-gray-600 font-medium"
                     : "text-serva-gray-400 hover:bg-light-200/50 hover:text-serva-gray-600"
@@ -85,12 +109,27 @@ function Sidebar({ sections, activeKey, onSelect, className }: SidebarProps) {
                     {item.icon}
                   </span>
                 )}
-                {item.label}
+                {!collapsed && item.label}
               </button>
             ))}
           </div>
         </div>
       ))}
+      {onToggleCollapse && (
+        <div className="mt-auto">
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className={cn(
+              "flex items-center h-[32px] rounded-[4px] cursor-pointer hover:bg-light-200/50 transition-colors w-full",
+              collapsed ? "justify-center px-0" : "px-2"
+            )}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <CollapseIcon collapsed={!!collapsed} />
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

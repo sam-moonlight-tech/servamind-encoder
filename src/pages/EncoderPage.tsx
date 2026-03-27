@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AppShell } from "@/components/layout";
 import { ContentPanel } from "@/components/layout/ContentPanel";
@@ -26,6 +26,7 @@ function EncoderPage() {
   const { process, setProcess, hasFile, stage, isUploading, isScrolled, setIsScrolled } = useWorkflow();
   const { isLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Read process type from URL params (e.g. /?process=decode from mobile menu)
   useEffect(() => {
@@ -72,6 +73,8 @@ function EncoderPage() {
             sections={DATA_SECTIONS}
             activeKey={activeKey}
             onSelect={handleSidebarSelect}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
           />
         </div>
         <ContentPanel
