@@ -65,6 +65,13 @@ function OnboardingContainer() {
     }
   }, [isAuthenticated, completed, step.screen, goToWelcome]);
 
+  // When logged out, reset to login screen so returning users don't see onboarding
+  useEffect(() => {
+    if (!isAuthenticated && step.screen !== "login") {
+      goToLogin();
+    }
+  }, [isAuthenticated, step.screen, goToLogin]);
+
   // Don't show if authenticated + already completed onboarding
   if (isAuthenticated && completed) return null;
 

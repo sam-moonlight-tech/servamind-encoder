@@ -63,6 +63,7 @@
   --animate-backdrop-out: backdrop-out 0.15s ease-in forwards;
   --animate-sheet-in: slide-up-sheet 0.3s ease-out;
   --animate-sheet-out: slide-down-sheet 0.2s ease-in forwards;
+  --animate-jiggle: jiggle 0.4s ease-in-out;
 }
 
 @keyframes holo-spin {
@@ -173,6 +174,27 @@
   }
   to {
     opacity: 0;
+  }
+}
+
+@keyframes jiggle {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+  100% {
+    transform: translateX(0);
   }
 }
 

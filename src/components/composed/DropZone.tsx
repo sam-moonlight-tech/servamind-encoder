@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import {
   useRive,
   useViewModel,
@@ -41,6 +41,7 @@ function DropZone({
   const isDecoding = processType === "decompress";
   const inputRef = useRef<HTMLInputElement>(null);
   const acceptAttr = isDecoding ? `.${COMPRESSED_FILE_TYPE}` : undefined;
+  const [isHovered, setIsHovered] = useState(false);
 
   const { RiveComponent, rive } = useRive({
     src: "/Aurora_mk2.riv",
@@ -57,11 +58,10 @@ function DropZone({
   const { setValue: setIsHovering } = useViewModelInstanceBoolean("isHovering", vmInstance);
 
   useEffect(() => {
-    if (setIsHovering && isDragging) {
-      setIsHovering(true);
-      return () => setIsHovering(false);
+    if (setIsHovering) {
+      setIsHovering(isHovered || isDragging);
     }
-  }, [isDragging, setIsHovering]);
+  }, [isHovered, isDragging, setIsHovering]);
 
   const handleClick = () => {
     inputRef.current?.click();
@@ -81,6 +81,8 @@ function DropZone({
         isDragging && "border-core-purple",
         className
       )}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
@@ -106,7 +108,7 @@ function DropZone({
       />
 
       {/* Rive animation background */}
-      <div className={cn("absolute inset-0 rounded-[16px] overflow-hidden", isDragging && "pointer-events-none")}>
+      <div className="absolute inset-0 rounded-[16px] overflow-hidden pointer-events-none">
         <RiveComponent className="w-full h-full" />
       </div>
 
