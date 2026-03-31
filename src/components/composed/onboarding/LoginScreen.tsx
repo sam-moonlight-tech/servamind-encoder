@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, type FormEvent } from "react";
+import { useEffect, useRef } from "react";
 import { ServamindLogo } from "../ServamindLogo";
 import { env } from "@/config/env";
 
@@ -7,6 +7,7 @@ interface LoginScreenProps {
   onGoogleCredential: (credential: string) => void;
 }
 
+/* Email sign-in hidden for launch — will be re-enabled later
 function Divider() {
   return (
     <div className="flex items-center gap-4">
@@ -18,6 +19,7 @@ function Divider() {
     </div>
   );
 }
+*/
 
 interface GoogleApi {
   accounts: {
@@ -37,20 +39,10 @@ interface GoogleApi {
   };
 }
 
-function LoginScreen({ onEmailSubmit, onGoogleCredential }: LoginScreenProps) {
-  const [email, setEmail] = useState("");
+function LoginScreen({ onEmailSubmit: _onEmailSubmit, onGoogleCredential }: LoginScreenProps) {
+  void _onEmailSubmit; // preserved for when email sign-in is re-enabled
   const googleBtnRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleSubmit = useCallback(
-    (e: FormEvent) => {
-      e.preventDefault();
-      if (email.trim()) {
-        onEmailSubmit(email.trim());
-      }
-    },
-    [email, onEmailSubmit]
-  );
 
   useEffect(() => {
     const el = googleBtnRef.current;
