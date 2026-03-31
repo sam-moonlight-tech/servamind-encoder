@@ -108,7 +108,8 @@ function LoginScreen({ onEmailSubmit, onGoogleCredential }: LoginScreenProps) {
         reusable AI&#8209;ready data
       </h1>
 
-      <form onSubmit={handleSubmit} className="w-full mb-6 relative">
+      {/* Email sign-in hidden for launch — will be re-enabled later */}
+      {/* <form onSubmit={handleSubmit} className="w-full mb-6 relative">
         <input
           type="email"
           value={email}
@@ -128,7 +129,7 @@ function LoginScreen({ onEmailSubmit, onGoogleCredential }: LoginScreenProps) {
 
       <div className="w-full mb-6">
         <Divider />
-      </div>
+      </div> */}
 
       <div ref={googleBtnRef} className="w-full flex justify-center" />
 

@@ -12,54 +12,118 @@ interface StepConfig {
   title: string;
   description: string;
   video: string | null;
+  illustration: "upload" | "secure" | null;
 }
 
 const STEPS: StepConfig[] = [
   {
     title: "Upload your files",
-    description: "Drag and drop or browse to upload any file type you want to encode.",
+    description: "Add any data you plan to use for AI training or experiments.",
     video: null,
+    illustration: "upload",
   },
   {
     title: "Encode your files once",
     description: "Servamind encodes your files into a compact, reusable format — just once.",
     video: encoderAnimationUrl,
+    illustration: null,
   },
   {
     title: "Reuse the files across models",
     description: "Use your encoded files with any AI model, as many times as you need.",
     video: modelChangeUrl,
+    illustration: null,
   },
   {
     title: "Your files stay secure by design",
-    description: "Your data is encrypted and never stored on our servers beyond processing.",
+    description:
+      "Servamind encrypts and deterministically encodes your files so you can reuse them safely across models without exposing or rebuilding your data.",
     video: null,
+    illustration: "secure",
   },
 ];
+
+function UploadIllustration() {
+  return (
+    <div className="relative w-full h-[201px] rounded-[12px] bg-light-300 overflow-hidden">
+      <img
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover rounded-[12px]"
+        src="/tutorial-upload.png"
+      />
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-end">
+        <img
+          alt=""
+          className="w-[52px] h-[52px] object-contain -rotate-[5deg]"
+          src="/tutorial-word.png"
+        />
+        <img
+          alt=""
+          className="w-[48px] h-[48px] object-contain rotate-[2deg] -ml-5"
+          src="/tutorial-indesign.png"
+        />
+        <div className="relative -ml-3">
+          <img
+            alt=""
+            className="w-[41px] h-[50px] object-contain rotate-[11deg]"
+            src="/tutorial-pdf.png"
+          />
+          <img
+            alt=""
+            className="absolute -top-[18px] -right-[14px] w-[47px] h-[47px] object-contain rotate-[11deg]"
+            src="/tutorial-closedhand.svg"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SecureIllustration() {
+  return (
+    <div className="relative w-full h-[201px] rounded-[12px] bg-light-300 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden">
+        <img
+          alt=""
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90 min-w-[200%] min-h-[200%] object-cover"
+          src="/tutorial-secure.png"
+        />
+      </div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative">
+          <div className="w-[38px] h-[44px] border-[7px] border-white rounded-t-full mx-auto -mb-5" />
+          <img
+            alt=""
+            className="w-[48px] h-[48px]"
+            src="/tutorial-lock.svg"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function TutorialScreen({ substep, onNext, onSkip, onComplete }: TutorialScreenProps) {
   const step = STEPS[substep];
   const isLast = substep === 3;
 
   return (
-    <div className="flex flex-col items-center text-center">
-      <p className="text-xs font-medium text-serva-gray-300 tracking-wide uppercase mb-2">
+    <div className="flex flex-col gap-4">
+      <h2 className="text-xl font-semibold text-serva-gray-600 leading-[1.1] tracking-[-0.6px]">
         How Servamind works
-      </p>
+      </h2>
 
-      <div className="flex items-center gap-1.5 mb-6">
-        {STEPS.map((_, i) => (
-          <div
-            key={i}
-            className={`h-1 w-6 rounded-full transition-colors ${
-              i <= substep ? "bg-serva-purple" : "bg-light-200"
-            }`}
-          />
-        ))}
+      <div className="flex flex-col gap-1">
+        <p className="text-sm font-semibold text-serva-gray-600">
+          {step.title}
+        </p>
+        <p className="text-xs text-serva-gray-400 leading-normal">
+          {step.description}
+        </p>
       </div>
 
       {step.video && (
-        <div className="w-full rounded-[12px] overflow-hidden bg-light-300 mb-6 aspect-video">
+        <div className="w-full h-[201px] rounded-[12px] overflow-hidden bg-light-300">
           <video
             key={step.video}
             autoPlay
@@ -73,63 +137,26 @@ function TutorialScreen({ substep, onNext, onSkip, onComplete }: TutorialScreenP
         </div>
       )}
 
-      {!step.video && (
-        <div className="w-full rounded-[12px] bg-light-300 mb-6 aspect-video flex items-center justify-center">
-          <div className="w-16 h-16 rounded-full bg-light-200 flex items-center justify-center">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#630066"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              {substep === 0 && (
-                <>
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </>
-              )}
-              {substep === 3 && (
-                <>
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </>
-              )}
-            </svg>
-          </div>
-        </div>
-      )}
+      {step.illustration === "upload" && <UploadIllustration />}
+      {step.illustration === "secure" && <SecureIllustration />}
 
-      <h2 className="text-xl font-bold text-serva-gray-600 leading-tight mb-2">
-        {step.title}
-      </h2>
-
-      <p className="text-sm text-serva-gray-400 leading-relaxed mb-8">
-        {step.description}
-      </p>
-
-      <div className="w-full flex flex-col gap-3">
-        <button
-          type="button"
-          onClick={isLast ? onComplete : onNext}
-          className="w-full rounded-[12px] bg-[#1C011E] text-white font-medium py-3 text-sm hover:bg-[#1C011E]/90 active:bg-[#1C011E]/80 transition-colors cursor-pointer"
-        >
-          {isLast ? "Start encoding" : "Next"}
-        </button>
-
+      <div className="flex items-center justify-end gap-2.5">
         {!isLast && (
           <button
             type="button"
             onClick={onSkip}
-            className="text-sm font-medium text-serva-gray-300 hover:text-serva-gray-400 cursor-pointer transition-colors"
+            className="h-9 px-3 rounded-[8px] bg-light-300 text-sm font-semibold text-serva-gray-600 hover:bg-light-200 transition-colors cursor-pointer"
           >
             Skip
           </button>
         )}
+        <button
+          type="button"
+          onClick={isLast ? onComplete : onNext}
+          className="h-9 px-3 rounded-[8px] bg-core-purple text-sm font-semibold text-light-200 hover:bg-core-purple/90 active:bg-core-purple/80 transition-colors cursor-pointer"
+        >
+          {isLast ? "Start encoding" : "Continue"}
+        </button>
       </div>
     </div>
   );

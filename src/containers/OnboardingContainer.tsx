@@ -15,7 +15,6 @@ function OnboardingContainer() {
     goToLogin,
     goToTutorial,
     nextTutorialStep,
-    skipToLastTutorial,
     completeOnboarding,
   } = useOnboardingFlow(user?.onboardingSeen);
 
@@ -87,7 +86,7 @@ function OnboardingContainer() {
       onMockVerify={env.authProvider === "mock" ? handleMockVerify : undefined}
       onWelcomeContinue={goToTutorial}
       onTutorialNext={nextTutorialStep}
-      onTutorialSkip={skipToLastTutorial}
+      onTutorialSkip={completeOnboarding}
       onTutorialComplete={completeOnboarding}
     />
   );
