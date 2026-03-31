@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { zipSync, strToU8 } from "fflate";
+import { zipSync } from "fflate";
 import { DownloadStageView } from "@/components/composed";
 import { useWorkflow } from "@/contexts/WorkflowContext";
 import { encoderService } from "@/services/api";
@@ -62,7 +62,7 @@ function DownloadContainer() {
       }
 
       const zipped = zipSync(zipData);
-      const zipBlob = new Blob([zipped], { type: "application/zip" });
+      const zipBlob = new Blob([zipped as BlobPart], { type: "application/zip" });
       const dateSuffix = new Date().toISOString().slice(0, 10);
       triggerBlobDownload(zipBlob, `servamind-${dateSuffix}.zip`);
       return;
