@@ -63,3 +63,7 @@ export {
   AbandonConfirmModal,
   type AbandonConfirmModalProps,
 } from "./AbandonConfirmModal";
+export {
+  FileTypeAlertModal,
+  type FileTypeAlertModalProps,
+} from "./FileTypeAlertModal";

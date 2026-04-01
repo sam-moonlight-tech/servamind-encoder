@@ -11,6 +11,7 @@ interface WorkflowState {
   activeProcess: ProcessType;
   isUploading: boolean;
   isScrolled: boolean;
+  resetCount: number;
   processes: Record<ProcessType, PerProcessState>;
 }
 
@@ -33,6 +34,7 @@ const initialState: WorkflowState = {
   activeProcess: "compress",
   isUploading: false,
   isScrolled: false,
+  resetCount: 0,
   processes: {
     compress: { ...perProcessInitial },
     decompress: { ...perProcessInitial },
@@ -81,9 +83,10 @@ function workflowReducer(
     case "RESET":
       return {
         ...state,
+        resetCount: state.resetCount + 1,
         processes: {
-          ...state.processes,
-          [active]: { ...perProcessInitial },
+          compress: { ...perProcessInitial },
+          decompress: { ...perProcessInitial },
         },
       };
     default:
@@ -98,6 +101,7 @@ interface WorkflowContextValue {
   fileResults: FileResult[];
   isUploading: boolean;
   isScrolled: boolean;
+  resetCount: number;
   setStage: (stage: WorkflowStage) => void;
   setProcess: (process: ProcessType) => void;
   setHasFile: (hasFile: boolean) => void;
@@ -151,6 +155,7 @@ function WorkflowProvider({ children }: { children: React.ReactNode }) {
         fileResults: active.fileResults,
         isUploading: state.isUploading,
         isScrolled: state.isScrolled,
+        resetCount: state.resetCount,
         setStage,
         setProcess,
         setHasFile,
