@@ -60,7 +60,7 @@ function ProfilePopover({
       {/* Profile header */}
       <div className="flex flex-col gap-1.5 px-5 py-5">
         <p className="text-sm font-semibold text-serva-gray-600">
-          {user.email.split("@")[0]}
+          {user.name || user.email.split("@")[0]}
         </p>
         <p className="text-xs text-serva-gray-400">{user.email}</p>
       </div>
@@ -152,7 +152,7 @@ function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSetting
     ? formatFileSize(usage.quota_limit_bytes)
     : "—";
 
-  const initial = user?.email?.[0]?.toUpperCase() ?? "U";
+  const initial = (user?.name?.[0] ?? user?.email?.[0])?.toUpperCase() ?? "U";
 
   return (
     <nav
@@ -187,15 +187,18 @@ function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSetting
             onClick={onNavigateDashboard}
             className={cn("font-medium cursor-pointer bg-transparent border-none p-0", isSettingsPage ? "text-serva-gray-400" : "text-serva-gray-600")}
           >
-            Dashboard
+            Home
           </button>
           <a
             href="https://servamind.mintlify.app/resnet-from-servas-tutorial"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-serva-gray-400 hover:text-serva-gray-600 transition-colors"
+            className="flex items-center gap-1 text-serva-gray-400 hover:text-serva-gray-600 transition-colors"
           >
             Get Started
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3.5 8.5l5-5M3.5 3.5h5v5" />
+            </svg>
           </a>
         </div>
 

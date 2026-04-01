@@ -8,7 +8,7 @@ import { useEncode, useDecode, useUsage } from "@/hooks/data";
 import { queryKeys } from "@/hooks/data/keys";
 import { useWorkflow } from "@/contexts/WorkflowContext";
 import { ApiError } from "@/services/api";
-import { getFileTypeLabel, formatFileSize, validateFileSize } from "@/services/file";
+import { getFileTypeLabel, formatFileSize, validateFileSize, isCompressedFile } from "@/services/file";
 import type { FileTableItem, ProcessType } from "@/types/domain.types";
 
 type FileStatus = "ready" | "waiting" | "encoding" | "encoded" | "uploading" | "complete" | "error";
@@ -33,13 +33,19 @@ function DropZoneContainer() {
   const { mutateAsync: encodeAsync } = useEncode();
   const { mutateAsync: decodeAsync } = useDecode();
   const { data: usage } = useUsage();
-  const { process, hasFile, setStage, setProcess, setHasFile, addFileResult, isUploading, setIsUploading } = useWorkflow();
+  const { process, setStage, setProcess, setHasFile, addFileResult, isUploading, setIsUploading } = useWorkflow();
 
   // Restore from cache if this process has persisted files
-  const cached = hasFile ? fileStateCache.get(process) : undefined;
+  const cached = fileStateCache.get(process);
+  const initialFiles = cached?.files ?? [];
 
-  const [files, setFiles] = useState<File[]>(() => cached?.files ?? []);
-  const [fileStatuses, setFileStatuses] = useState<Map<string, FileStatus>>(() => cached?.fileStatuses ?? new Map());
+  // Sync hasFile on mount — the previous process may have left it stale
+  useEffect(() => {
+    setHasFile(initialFiles.length > 0);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [files, setFiles] = useState<File[]>(() => initialFiles);
+  const [fileStatuses, setFileStatuses] = useState<Map<string, FileStatus>>(() => cached?.fileStatuses ?? new Map<string, FileStatus>());
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [showUsageLimitModal, setShowUsageLimitModal] = useState(false);
   const [showPaymentRequiredModal, setShowPaymentRequiredModal] = useState(false);
@@ -74,16 +80,39 @@ function DropZoneContainer() {
   }
 
   const handleFileSelect = useCallback((selectedFiles: File[]) => {
+    // If user drops only .serva files while in encode mode with no existing files,
+    // auto-switch to decode mode
+    if (
+      process === "compress"
+      && files.length === 0
+      && selectedFiles.length > 0
+      && selectedFiles.every((f) => isCompressedFile(f))
+    ) {
+      // Pre-populate the decode cache so the new DropZoneContainer picks up the files
+      const statuses = new Map<string, FileStatus>();
+      selectedFiles.forEach((f) => statuses.set(`${f.name}:${f.size}`, "ready"));
+      fileStateCache.set("decompress", {
+        files: selectedFiles,
+        fileStatuses: statuses,
+        encodingResults: new Map(),
+        encodingIndex: 0,
+      });
+      setHasFile(true);
+      setProcess("decompress");
+      return;
+    }
+
     setFiles((prev) => {
       const existingKeys = new Set(prev.map((f) => `${f.name}:${f.size}`));
       const newFiles = selectedFiles.filter(
         (f) => !existingKeys.has(`${f.name}:${f.size}`)
+          && (process !== "compress" || !isCompressedFile(f))
       );
       if (newFiles.length === 0) return prev;
       return [...prev, ...newFiles];
     });
     setHasFile(true);
-  }, [setHasFile]);
+  }, [setHasFile, process, setProcess, files.length]);
 
   const {
     isDragging,

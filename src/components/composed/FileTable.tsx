@@ -134,6 +134,7 @@ const ARCHIVE_EXTS = new Set(["zip", "tar", "gz", "rar", "7z", "bz2", "xz"]);
 
 function getFileIcon(fileName: string) {
   const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "serva") return <ServaIcon />;
   if (IMAGE_EXTS.has(ext)) return <ImageIcon />;
   if (VIDEO_EXTS.has(ext)) return <VideoIcon />;
   if (AUDIO_EXTS.has(ext)) return <AudioIcon />;
@@ -277,7 +278,7 @@ function FileRow({
       className={cn(
         "flex items-center justify-between h-auto md:h-[56px] p-5 md:py-5 border-b border-light-200 last:border-b-0",
         isError ? "bg-[#fff4f4]" : "bg-white",
-        hasDownload ? "md:pl-8 md:pr-[10px]" : "md:pl-8 md:pr-[22px]",
+        hasDownload ? "md:pl-5 md:pr-[10px]" : "md:pl-5 md:pr-[22px]",
       )}
     >
       {/* Left side: icon + name + sizes */}
@@ -303,9 +304,9 @@ function FileRow({
               <span className="text-serva-gray-400">
                 Encoded: {file.encodedSize}
               </span>
-              {file.reductionPercent != null && (
-                <span className="text-serva-green font-semibold">
-                  (-{Math.abs(file.reductionPercent)}%)
+              {file.reductionPercent != null && file.reductionPercent > 0 && (
+                <span className="text-serva-green">
+                  (-{file.reductionPercent}%)
                 </span>
               )}
             </div>

@@ -59,3 +59,7 @@ export {
   AddPaymentMethodForm,
   type AddPaymentMethodFormProps,
 } from "./AddPaymentMethodForm";
+export {
+  AbandonConfirmModal,
+  type AbandonConfirmModalProps,
+} from "./AbandonConfirmModal";

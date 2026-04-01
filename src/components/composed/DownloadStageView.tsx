@@ -202,10 +202,12 @@ function DownloadStageView({
         </div>
 
         <div className="hidden md:flex items-center gap-4">
-          <Button variant="secondary" size="md" onClick={handleDownloadReport}>
-            Download report
-            <GoogleDocsIcon />
-          </Button>
+          {!isDecoding && (
+            <Button variant="secondary" size="md" onClick={handleDownloadReport}>
+              Download report
+              <GoogleDocsIcon />
+            </Button>
+          )}
           <Button size="md" onClick={onDownloadAll}>
             Download all
             <DownloadIcon />
@@ -245,10 +247,12 @@ function DownloadStageView({
 
       {/* Mobile: download buttons below banner */}
       <div className="flex md:hidden items-center gap-4 px-4 pb-6">
-        <Button variant="secondary" size="md" onClick={handleDownloadReport}>
-          Download report
-          <GoogleDocsIcon />
-        </Button>
+        {!isDecoding && (
+          <Button variant="secondary" size="md" onClick={handleDownloadReport}>
+            Download report
+            <GoogleDocsIcon />
+          </Button>
+        )}
         <Button size="md" onClick={onDownloadAll} className="flex-1 justify-center">
           Download all
           <DownloadIcon />
@@ -318,10 +322,17 @@ function DownloadStageView({
                     without rebuilding preprocessing pipelines.
                   </p>
                 </div>
-                <Button size="md">
-                  Train your models
-                  <ArrowRightIcon />
-                </Button>
+                <a
+                  href="https://servamind.mintlify.app/resnet-from-servas-tutorial"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="no-underline"
+                >
+                  <Button size="md">
+                    Train your models
+                    <ArrowRightIcon />
+                  </Button>
+                </a>
               </div>
             </div>
           </div>

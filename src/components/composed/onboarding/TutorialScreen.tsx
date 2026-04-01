@@ -1,5 +1,7 @@
 import encoderAnimationUrl from "@/assets/videos/Servamind_EncoderAnimation.mp4";
 import modelChangeUrl from "@/assets/videos/Servamind_ModelChange.mp4";
+import uploadIllustrationUrl from "@/assets/images/tutorial-upload.png";
+import secureIllustrationUrl from "@/assets/images/tutorial-secure.png";
 
 interface TutorialScreenProps {
   substep: 0 | 1 | 2 | 3;
@@ -45,61 +47,21 @@ const STEPS: StepConfig[] = [
 
 function UploadIllustration() {
   return (
-    <div className="relative w-full h-[201px] rounded-[12px] bg-light-300 overflow-hidden">
-      <img
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover rounded-[12px]"
-        src="/tutorial-upload.png"
-      />
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-end">
-        <img
-          alt=""
-          className="w-[52px] h-[52px] object-contain -rotate-[5deg]"
-          src="/tutorial-word.png"
-        />
-        <img
-          alt=""
-          className="w-[48px] h-[48px] object-contain rotate-[2deg] -ml-5"
-          src="/tutorial-indesign.png"
-        />
-        <div className="relative -ml-3">
-          <img
-            alt=""
-            className="w-[41px] h-[50px] object-contain rotate-[11deg]"
-            src="/tutorial-pdf.png"
-          />
-          <img
-            alt=""
-            className="absolute -top-[18px] -right-[14px] w-[47px] h-[47px] object-contain rotate-[11deg]"
-            src="/tutorial-closedhand.svg"
-          />
-        </div>
-      </div>
-    </div>
+    <img
+      alt="Upload your files"
+      className="w-full h-[201px] rounded-[8px] object-cover"
+      src={uploadIllustrationUrl}
+    />
   );
 }
 
 function SecureIllustration() {
   return (
-    <div className="relative w-full h-[201px] rounded-[12px] bg-light-300 overflow-hidden">
-      <div className="absolute inset-0 overflow-hidden">
-        <img
-          alt=""
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90 min-w-[200%] min-h-[200%] object-cover"
-          src="/tutorial-secure.png"
-        />
-      </div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative">
-          <div className="w-[38px] h-[44px] border-[7px] border-white rounded-t-full mx-auto -mb-5" />
-          <img
-            alt=""
-            className="w-[48px] h-[48px]"
-            src="/tutorial-lock.svg"
-          />
-        </div>
-      </div>
-    </div>
+    <img
+      alt="Your files stay secure"
+      className="w-full h-[201px] rounded-[8px] object-cover"
+      src={secureIllustrationUrl}
+    />
   );
 }
 
@@ -126,14 +88,13 @@ function TutorialScreen({ substep, onNext, onSkip, onComplete }: TutorialScreenP
         <div className="w-full h-[201px] rounded-[12px] overflow-hidden bg-light-300">
           <video
             key={step.video}
+            src={step.video}
             autoPlay
             loop
             muted
             playsInline
             className="w-full h-full object-cover"
-          >
-            <source src={step.video} type="video/mp4" />
-          </video>
+          />
         </div>
       )}
 

@@ -17,11 +17,15 @@ function useOnboardingFlow(onboardingSeen?: boolean) {
   const [step, setStep] = useState<OnboardingStep>({ screen: "login" });
   const [completed, setCompleted] = useState(isOnboardingComplete);
 
-  // Sync with backend flag — if backend says onboarding was seen, mark complete locally
+  // Sync with backend flag — trust the backend as source of truth for the current user
   useEffect(() => {
-    if (onboardingSeen && !completed) {
+    if (onboardingSeen === true && !completed) {
       localStorage.setItem(ONBOARDING_COMPLETE_KEY, "true");
       setCompleted(true);
+    } else if (onboardingSeen === false && completed) {
+      // New account in same browser — backend says not seen, override stale local flag
+      localStorage.removeItem(ONBOARDING_COMPLETE_KEY);
+      setCompleted(false);
     }
   }, [onboardingSeen]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -45,7 +49,10 @@ function useOnboardingFlow(onboardingSeen?: boolean) {
     setStep((prev) => {
       if (prev.screen !== "tutorial") return prev;
       if (prev.substep < 3) {
-        return { screen: "tutorial", substep: (prev.substep + 1) as 0 | 1 | 2 | 3 };
+        return {
+          screen: "tutorial",
+          substep: (prev.substep + 1) as 0 | 1 | 2 | 3,
+        };
       }
       return prev;
     });

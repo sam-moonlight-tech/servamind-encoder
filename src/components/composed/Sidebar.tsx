@@ -78,7 +78,7 @@ function Sidebar({ sections, activeKey, onSelect, collapsed, onToggleCollapse, c
     <aside
       className={cn(
         "shrink-0 py-6 px-3 flex flex-col transition-[width] duration-200",
-        collapsed ? "w-[52px]" : "w-[184px]",
+        collapsed ? "w-[52px]" : "w-[208px]",
         className
       )}
     >

@@ -93,7 +93,7 @@ function PrivateKeyModal({ open, mode = "encrypt", onClose, onConfirm }: Private
   let onSecondary: () => void;
 
   if (step === "confirm2") {
-    heading = "Are you sureee you saved it?";
+    heading = "Are you sure you saved it?";
     description = "Without this private key you can't decode your .serva files. Ever. Just double checking!";
     primaryLabel = "It's definitely saved";
     secondaryLabel = "Go back";
