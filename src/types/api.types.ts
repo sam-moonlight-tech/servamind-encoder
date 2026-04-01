@@ -73,6 +73,7 @@ export interface EncodeStreamResponse {
   original_size_bytes: number;
   encoded_size_bytes: number;
   file_size_bytes: number;
+  savings_percent: number;
 }
 
 // Decoding

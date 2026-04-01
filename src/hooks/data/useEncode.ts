@@ -46,7 +46,7 @@ export function useEncode() {
       onStreamComplete?.();
 
       // Use the encoded size from the stream response
-      const encodedSize = streamResult.file_size_bytes ?? null;
+      const encodedSize = streamResult.encoded_size_bytes ?? null;
 
       // Pre-fetch and cache the encoded file for the download button
       try {

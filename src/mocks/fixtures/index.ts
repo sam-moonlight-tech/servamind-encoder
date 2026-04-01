@@ -75,6 +75,7 @@ export const mockEncodeStreamResponse: EncodeStreamResponse = {
   original_size_bytes: 1024,
   encoded_size_bytes: 480,
   file_size_bytes: 530,
+  savings_percent: 53.13,
 };
 
 export const mockDecodeInitResponse: DecodeInitResponse = {
