@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import {
   useRive,
   useViewModel,
@@ -41,8 +41,6 @@ function DropZone({
   const isDecoding = processType === "decompress";
   const inputRef = useRef<HTMLInputElement>(null);
   const acceptAttr = isDecoding ? `.${COMPRESSED_FILE_TYPE}` : undefined;
-  const [isHovered, setIsHovered] = useState(false);
-
   const { RiveComponent, rive } = useRive({
     src: "/Aurora_mk2.riv",
     artboard: "Artboard",
@@ -52,16 +50,16 @@ function DropZone({
     layout: RIVE_LAYOUT,
   });
 
-  // Access ViewModel to programmatically set hover during drag
+  // Keep the Rive animation always active
   const viewModel = useViewModel(rive, { name: "ViewModel1" });
   const vmInstance = useViewModelInstance(viewModel, { useDefault: true, rive });
   const { setValue: setIsHovering } = useViewModelInstanceBoolean("isHovering", vmInstance);
 
   useEffect(() => {
     if (setIsHovering) {
-      setIsHovering(isHovered || isDragging);
+      setIsHovering(true);
     }
-  }, [isHovered, isDragging, setIsHovering]);
+  }, [setIsHovering]);
 
   const handleClick = () => {
     inputRef.current?.click();
@@ -81,8 +79,6 @@ function DropZone({
         isDragging && "border-core-purple",
         className
       )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
