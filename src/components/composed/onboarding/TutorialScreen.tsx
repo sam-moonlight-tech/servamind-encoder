@@ -1,7 +1,7 @@
 import encoderAnimationUrl from "@/assets/videos/Servamind_EncoderAnimation.mp4";
 import modelChangeUrl from "@/assets/videos/Servamind_ModelChange.mp4";
-import uploadIllustrationUrl from "@/assets/images/tutorial-upload.png";
-import secureIllustrationUrl from "@/assets/images/tutorial-secure.png";
+import uploadIllustrationUrl from "@/assets/images/tutorial-upload.webp";
+import secureIllustrationUrl from "@/assets/images/tutorial-secure.webp";
 
 interface TutorialScreenProps {
   substep: 0 | 1 | 2 | 3;
@@ -93,6 +93,7 @@ function TutorialScreen({ substep, onNext, onSkip, onComplete }: TutorialScreenP
             loop
             muted
             playsInline
+            preload="auto"
             className="w-full h-full object-cover"
           />
         </div>

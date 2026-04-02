@@ -61,6 +61,17 @@ function DropZone({
     }
   }, [setIsHovering]);
 
+  // Resume animation when tab regains visibility (WebGL pauses on hidden tabs)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && rive) {
+        rive.startRendering();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [rive]);
+
   const handleClick = () => {
     inputRef.current?.click();
   };
