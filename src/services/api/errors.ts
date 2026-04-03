@@ -20,7 +20,12 @@ export class ApiError extends Error {
         "PAYMENT_METHOD_REQUIRED"
       );
     }
-    const detail = body?.detail || response.statusText || "Unknown error";
+    const rawDetail = body?.detail;
+    const detail =
+      (typeof rawDetail === "string" ? rawDetail : null)
+      || body?.message
+      || response.statusText
+      || "Unknown error";
     return new ApiError(
       detail,
       response.status,

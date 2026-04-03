@@ -40,6 +40,7 @@ export interface FileResult {
   fileId: string;
   downloadUrl: string;
   durationMs: number | null;
+  error?: string;
 }
 
 export interface FeatureFlags {

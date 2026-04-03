@@ -9,7 +9,7 @@ import { queryKeys } from "@/hooks/data/keys";
 import { useWorkflow } from "@/contexts/WorkflowContext";
 import { ApiError } from "@/services/api";
 import { getFileTypeLabel, formatFileSize, validateFileSize, isCompressedFile } from "@/services/file";
-import type { FileTableItem, ProcessType } from "@/types/domain.types";
+import type { FileResult, FileTableItem, ProcessType } from "@/types/domain.types";
 
 type FileStatus = "ready" | "waiting" | "encoding" | "encoded" | "uploading" | "complete" | "error";
 
@@ -187,6 +187,7 @@ function DropZoneContainer() {
       });
 
       let hasSuccess = false;
+      const orderedResults: FileResult[] = [];
 
       if (compress) {
         let idx = 0;
@@ -216,7 +217,7 @@ function DropZoneContainer() {
               return next;
             });
 
-            addFileResult({
+            orderedResults.push({
               fileName: file.name,
               originalSize: file.size,
               encodedSize: result.encodedSize,
@@ -233,8 +234,17 @@ function DropZoneContainer() {
             }
             stopSimulatedProgress(file);
             setStatus(file, "error");
-            const msg = err instanceof ApiError ? err.message : (err instanceof Error ? err.message : null);
-            if (msg) setFileErrors((prev) => new Map(prev).set(fileKey(file), `Encoding failed: ${msg}`));
+            const msg = err instanceof ApiError ? err.message : (err instanceof Error ? err.message : "Unknown error");
+            setFileErrors((prev) => new Map(prev).set(fileKey(file), `Encoding failed: ${msg}`));
+            orderedResults.push({
+              fileName: file.name,
+              originalSize: file.size,
+              encodedSize: null,
+              fileId: "",
+              downloadUrl: "",
+              durationMs: null,
+              error: `Encoding failed: ${msg}`,
+            });
           }
         }
         setProcess("compress");
@@ -255,7 +265,7 @@ function DropZoneContainer() {
             const durationMs = performance.now() - start;
             stopSimulatedProgress(file);
             setStatus(file, "complete");
-            addFileResult({
+            orderedResults.push({
               fileName: result.stream.original_filename || file.name,
               originalSize: file.size,
               encodedSize: null,
@@ -272,8 +282,17 @@ function DropZoneContainer() {
             }
             stopSimulatedProgress(file);
             setStatus(file, "error");
-            const msg = err instanceof ApiError ? err.message : (err instanceof Error ? err.message : null);
-            if (msg) setFileErrors((prev) => new Map(prev).set(fileKey(file), `Decoding failed: ${msg}`));
+            const msg = err instanceof ApiError ? err.message : (err instanceof Error ? err.message : "Unknown error");
+            setFileErrors((prev) => new Map(prev).set(fileKey(file), `Decoding failed: ${msg}`));
+            orderedResults.push({
+              fileName: file.name,
+              originalSize: file.size,
+              encodedSize: null,
+              fileId: "",
+              downloadUrl: "",
+              durationMs: null,
+              error: `Decoding failed: ${msg}`,
+            });
           }
         }
         setProcess("decompress");
@@ -282,6 +301,9 @@ function DropZoneContainer() {
       setIsUploading(false);
       if (hasSuccess) {
         queryClient.invalidateQueries({ queryKey: queryKeys.usage });
+        for (const result of orderedResults) {
+          addFileResult(result);
+        }
         setFiles([]);
         setFileStatuses(new Map());
         setEncodingResults(new Map());

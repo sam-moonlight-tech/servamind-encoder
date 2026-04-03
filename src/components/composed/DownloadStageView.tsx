@@ -129,6 +129,16 @@ function DownloadStageView({
 
   const fileTableItems: FileTableItem[] = useMemo(() => {
     return fileResults.map((result) => {
+      if (result.error) {
+        return {
+          name: result.fileName,
+          typeLabel: "",
+          formattedSize: formatFileSize(result.originalSize),
+          status: "error" as FileTableItem["status"],
+          sizeError: result.error,
+        };
+      }
+
       const wasDecoded = isDecoding || result.encodedSize === null;
       const servaName = result.fileName.replace(/\.[^.]+$/, ".serva");
       const displayName = wasDecoded ? result.fileName : servaName;
@@ -155,7 +165,7 @@ function DownloadStageView({
 
   const handleDownloadByIndex = (index: number) => {
     const result = fileResults[index];
-    if (!result) return;
+    if (!result || result.error) return;
     const wasDecoded = isDecoding || result.encodedSize === null;
     const servaName = result.fileName.replace(/\.[^.]+$/, ".serva");
     const displayName = wasDecoded ? result.fileName : servaName;
