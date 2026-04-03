@@ -190,7 +190,7 @@ function NavBar({ user, usage, onSignOut, onNavigateDashboard, onNavigateSetting
             Home
           </button>
           <a
-            href="https://servamind.mintlify.app/resnet-from-servas-tutorial"
+            href="https://servamind.mintlify.app/guides/basics"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-serva-gray-400 hover:text-serva-gray-600 transition-colors"
