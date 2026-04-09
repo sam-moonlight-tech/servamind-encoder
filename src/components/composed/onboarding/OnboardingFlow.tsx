@@ -4,6 +4,7 @@ import { LoginScreen } from "./LoginScreen";
 import { CheckEmailScreen } from "./CheckEmailScreen";
 import { WelcomeScreen } from "./WelcomeScreen";
 import { TutorialScreen } from "./TutorialScreen";
+import { PrivacyConsentScreen } from "./PrivacyConsentScreen";
 
 interface OnboardingFlowProps {
   step: OnboardingStep;
@@ -12,6 +13,7 @@ interface OnboardingFlowProps {
   onUseAnotherEmail: () => void;
   onMockVerify?: () => void;
   onWelcomeContinue: () => void;
+  onPrivacyContinue: () => void;
   onTutorialNext: () => void;
   onTutorialSkip: () => void;
   onTutorialComplete: () => void;
@@ -24,6 +26,7 @@ function OnboardingFlow({
   onUseAnotherEmail,
   onMockVerify,
   onWelcomeContinue,
+  onPrivacyContinue,
   onTutorialNext,
   onTutorialSkip,
   onTutorialComplete,
@@ -45,6 +48,9 @@ function OnboardingFlow({
       )}
       {step.screen === "welcome" && (
         <WelcomeScreen onContinue={onWelcomeContinue} />
+      )}
+      {step.screen === "privacy" && (
+        <PrivacyConsentScreen onContinue={onPrivacyContinue} />
       )}
       {step.screen === "tutorial" && (
         <TutorialScreen

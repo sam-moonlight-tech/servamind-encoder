@@ -13,6 +13,7 @@ function OnboardingContainer() {
     goToCheckEmail,
     goToWelcome,
     goToLogin,
+    goToPrivacy,
     goToTutorial,
     nextTutorialStep,
     completeOnboarding,
@@ -57,6 +58,10 @@ function OnboardingContainer() {
     }
   }, [signIn, goToWelcome]);
 
+  const handlePrivacyContinue = useCallback(() => {
+    goToTutorial();
+  }, [goToTutorial]);
+
   // When already authenticated, skip login/check-email → go to welcome
   useEffect(() => {
     if (isAuthenticated && !completed && step.screen === "login") {
@@ -84,7 +89,8 @@ function OnboardingContainer() {
       onGoogleCredential={handleGoogleCredential}
       onUseAnotherEmail={handleUseAnotherEmail}
       onMockVerify={env.authProvider === "mock" ? handleMockVerify : undefined}
-      onWelcomeContinue={goToTutorial}
+      onWelcomeContinue={goToPrivacy}
+      onPrivacyContinue={handlePrivacyContinue}
       onTutorialNext={nextTutorialStep}
       onTutorialSkip={completeOnboarding}
       onTutorialComplete={completeOnboarding}

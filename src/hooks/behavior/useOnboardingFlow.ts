@@ -7,6 +7,7 @@ type OnboardingStep =
   | { screen: "login" }
   | { screen: "check-email"; email: string }
   | { screen: "welcome" }
+  | { screen: "privacy" }
   | { screen: "tutorial"; substep: 0 | 1 | 2 | 3 };
 
 function isOnboardingComplete(): boolean {
@@ -39,6 +40,10 @@ function useOnboardingFlow(onboardingSeen?: boolean) {
 
   const goToLogin = useCallback(() => {
     setStep({ screen: "login" });
+  }, []);
+
+  const goToPrivacy = useCallback(() => {
+    setStep({ screen: "privacy" });
   }, []);
 
   const goToTutorial = useCallback(() => {
@@ -75,6 +80,7 @@ function useOnboardingFlow(onboardingSeen?: boolean) {
     goToCheckEmail,
     goToWelcome,
     goToLogin,
+    goToPrivacy,
     goToTutorial,
     nextTutorialStep,
     skipToLastTutorial,

@@ -124,14 +124,6 @@ function LoginScreen({ onEmailSubmit: _onEmailSubmit, onGoogleCredential }: Logi
       </div> */}
 
       <div ref={googleBtnRef} className="w-full flex justify-center" />
-
-      <p className="mt-8 text-xs text-serva-gray-300 leading-relaxed">
-        By continuing, you agree to Servamind&apos;s{" "}
-        <a href="#" className="underline text-serva-gray-600">
-          Privacy Policy
-        </a>
-        .
-      </p>
     </div>
   );
 }
