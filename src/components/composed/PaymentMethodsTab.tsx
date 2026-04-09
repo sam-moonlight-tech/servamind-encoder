@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePaymentMethods, queryKeys } from "@/hooks/data";
 import { billingService } from "@/services/api";
@@ -61,6 +61,20 @@ function PaymentMethodsTab({ onPaymentMethodAdded }: PaymentMethodsTabProps) {
     queryClient.invalidateQueries({ queryKey: queryKeys.paymentMethods });
   }, [queryClient]);
 
+  // If there's exactly one payment method and it's not flagged as default,
+  // promote it server-side so the UI and backend stay in sync.
+  const autoPromotedIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!methods || methods.length !== 1) return;
+    const only = methods[0];
+    if (only.is_default) return;
+    if (autoPromotedIdRef.current === only.id) return;
+    autoPromotedIdRef.current = only.id;
+    handleSetDefault(only.id).catch(() => {
+      autoPromotedIdRef.current = null;
+    });
+  }, [methods, handleSetDefault]);
+
   const handleDelete = useCallback(async (paymentMethodId: string) => {
     await billingService.deletePaymentMethod(paymentMethodId);
     queryClient.invalidateQueries({ queryKey: queryKeys.paymentMethods });
@@ -82,14 +96,19 @@ function PaymentMethodsTab({ onPaymentMethodAdded }: PaymentMethodsTabProps) {
           <>
             {hasMethods ? (
               <>
-                {methods.map((pm) => (
+                {methods.map((pm) => {
+                  // Treat the sole payment method as default in the UI even
+                  // before the server confirms it — avoids a "Make Default" →
+                  // "Default" flash while the auto-promotion request is in flight.
+                  const displayAsDefault = pm.is_default || methods.length === 1;
+                  return (
                   <div
                     key={pm.id}
                     className="border border-light-200 rounded-[12px] w-full md:w-[300px] pt-3 pb-4 pl-4 pr-3 flex flex-col gap-4"
                   >
                     <div className="flex items-center justify-between w-full">
                       <PaymentMethodLabel pm={pm} />
-                      {pm.is_default ? (
+                      {displayAsDefault ? (
                         <span className="bg-serva-gray-600 text-white text-xs font-semibold h-6 px-3 flex items-center justify-center rounded-[4px] leading-[1.4]">
                           Default
                         </span>
@@ -111,7 +130,8 @@ function PaymentMethodsTab({ onPaymentMethodAdded }: PaymentMethodsTabProps) {
                       Delete
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </>
             ) : (
               <p className="text-xs text-serva-gray-400">
