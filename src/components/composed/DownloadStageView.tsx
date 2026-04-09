@@ -1,4 +1,5 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
+import confetti from "canvas-confetti";
 import { Button } from "@/components/ui";
 import { FileTable } from "./FileTable";
 import { cn } from "@/lib/utils";
@@ -116,6 +117,29 @@ function DownloadStageView({
 }: DownloadStageViewProps) {
   const isDecoding = process === "decompress";
   const { isScrolled } = useWorkflow();
+
+  useEffect(() => {
+    if (isDecoding) return;
+    const hasHighCompression = fileResults.some(
+      (r) =>
+        r.encodedSize !== null &&
+        r.originalSize > 0 &&
+        (r.originalSize - r.encodedSize) / r.originalSize > 0.9
+    );
+    if (!hasHighCompression) return;
+
+    const isMobile = window.innerWidth < 768;
+    const particleCount = isMobile ? 2 : 3;
+    const duration = isMobile ? 1500 : 2000;
+    const end = Date.now() + duration;
+    const colors = ["#c2ea53", "#bdfee3", "#a9b7fc", "#fccaec", "#ffd8a9", "#feffe3", "#ff8fab", "#74c7ec", "#f9c74f", "#90e0ef", "#b5e48c", "#d0a2f7"];
+    (function frame() {
+      confetti({ particleCount, angle: 60, spread: 50, origin: { x: 0 }, colors });
+      confetti({ particleCount, angle: 120, spread: 50, origin: { x: 1 }, colors });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Calculate total space saved across all files (bytes)
   const totalSavedBytes = useMemo(() => {
