@@ -54,15 +54,15 @@ function ProfilePopover({
   return createPortal(
     <div
       ref={popoverRef}
-      className="fixed z-50 w-[188px] bg-white rounded-lg shadow-[0px_0px_1px_0px_rgba(0,0,0,0.06),0px_4px_24px_0px_rgba(0,0,0,0.12)] animate-fade-in"
+      className="fixed z-50 w-[240px] bg-white rounded-lg shadow-[0px_0px_1px_0px_rgba(0,0,0,0.06),0px_4px_24px_0px_rgba(0,0,0,0.12)] animate-fade-in overflow-hidden"
       style={{ top, right }}
     >
       {/* Profile header */}
       <div className="flex flex-col gap-1.5 px-5 py-5">
-        <p className="text-sm font-semibold text-serva-gray-600">
+        <p className="text-sm font-semibold text-serva-gray-600 truncate">
           {user.name || user.email.split("@")[0]}
         </p>
-        <p className="text-xs text-serva-gray-400">{user.email}</p>
+        <p className="text-xs text-serva-gray-400 truncate">{user.email}</p>
       </div>
 
       <div className="h-px bg-light-200" />

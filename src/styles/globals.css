@@ -32,6 +32,10 @@
   --color-holo-orange: #ffd8a9;
   --color-holo-yellow: #feffd3;
 
+  /* Font Sizes (shifted up one step: 12→14, 14→16) */
+  --text-xs: 0.875rem; /* 14px */
+  --text-sm: 1rem;     /* 16px */
+
   /* Font Families */
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "PT Mono", ui-monospace, monospace;
@@ -220,6 +224,18 @@
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+.scrollbar-visible::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-visible::-webkit-scrollbar-track {
+  background: var(--color-light-200);
+  border-radius: 3px;
+}
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background-color: var(--color-serva-gray-200);
+  border-radius: 3px;
 }
 
 /* Base styles */

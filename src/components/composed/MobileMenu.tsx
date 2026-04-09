@@ -137,8 +137,8 @@ function MobileMenu({
         {/* User info */}
         {user && (
           <div className="flex flex-col gap-1 mb-8 mt-8">
-            <p className="text-base font-semibold text-serva-gray-600">{displayName}</p>
-            <p className="text-sm text-serva-gray-400">{displayEmail}</p>
+            <p className="text-base font-semibold text-serva-gray-600 truncate">{displayName}</p>
+            <p className="text-sm text-serva-gray-400 truncate">{displayEmail}</p>
             <div className="flex items-center gap-1 mt-2 text-sm">
               <span className="text-serva-gray-400">Used</span>
               <span className="font-medium text-serva-gray-600">{usedDisplay}</span>

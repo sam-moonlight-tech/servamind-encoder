@@ -91,7 +91,7 @@ function UploadStageView({
           />
         </div>
         <div className="px-4 md:px-6 pb-20 md:pb-6">
-          <FileTable files={fileTableItems} onRemove={onRemove} className="max-h-[448px] overflow-y-auto" />
+          <FileTable files={fileTableItems} onRemove={onRemove} className="max-h-[60vh] md:max-h-[448px] overflow-y-auto scrollbar-visible" />
         </div>
         {/* Mobile fixed bottom action bar */}
         <div className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-light-200 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] z-30">
@@ -105,6 +105,7 @@ function UploadStageView({
 
   return (
     <div className={cn(className)}>
+      {processType === "compress" && <ComparisonDiagram />}
       <DropZone
         isDragging={isDragging}
         file={file}
@@ -116,7 +117,6 @@ function UploadStageView({
         onDragOver={onDragOver}
         onDrop={onDrop}
       />
-      {processType === "compress" && <ComparisonDiagram />}
     </div>
   );
 }

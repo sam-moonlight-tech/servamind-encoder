@@ -119,22 +119,22 @@ function WithoutRow({
 
 function ComparisonDiagram({ className }: ComparisonDiagramProps) {
   return (
-    <div className={cn("flex flex-col items-center gap-12 mt-10 pb-12 md:px-0", className)}>
+    <div className={cn("flex flex-col items-center gap-8 mt-4 pb-12 md:px-0 overflow-hidden", className)}>
       {/* Section heading */}
       <div className="flex flex-col items-center gap-4">
-        <h3 className="text-2xl md:text-xl font-semibold text-serva-gray-600 leading-[1.2] text-center">
-          Then never preprocess your data again
+        <h3 className="text-2xl font-semibold text-serva-gray-600 leading-[1.2] text-center">
+         Encode your data once, reuse it everywhere
         </h3>
-        <p className="text-sm text-serva-gray-400 text-center leading-[1.4] tracking-[-0.42px] max-w-[371px]">
-          Instead of rebuilding preprocessing for each pipeline, load your .serva
+        <p className="text-sm text-serva-gray-400 text-center leading-[1.4] tracking-[-0.42px] max-w-[520px]">
+          Instead of rebuilding preprocessing for each pipeline, load your new .serva
           files directly into the workflow you already use.
         </p>
       </div>
 
       {/* Comparison cards */}
-      <div className="flex flex-col md:flex-row items-stretch gap-4 w-full md:w-auto">
+      <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-4 lg:gap-3 xl:gap-4 lg:scale-[0.8] xl:scale-100 origin-top">
         {/* Without Servamind */}
-        <div className="bg-white border border-light-200 rounded-2xl p-4 md:p-8 flex flex-col items-center gap-4 md:gap-6">
+        <div className="bg-white border border-light-200 rounded-2xl p-4 lg:p-4 xl:p-8 flex flex-col items-center gap-4 md:gap-6">
           <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px] text-center">
             Without Servamind
           </p>
@@ -146,7 +146,7 @@ function ComparisonDiagram({ className }: ComparisonDiagramProps) {
         </div>
 
         {/* With Servamind */}
-        <div className="bg-white border border-light-200 rounded-2xl p-4 md:p-8 flex flex-col items-center gap-4 md:gap-6">
+        <div className="bg-white border border-light-200 rounded-2xl p-4 lg:p-4 xl:p-8 flex flex-col items-center gap-4 md:gap-6">
           <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px] text-center">
             With Servamind
           </p>

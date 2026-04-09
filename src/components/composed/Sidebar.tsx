@@ -85,7 +85,7 @@ function Sidebar({ sections, activeKey, onSelect, collapsed, onToggleCollapse, c
       {sections.map((section) => (
         <div key={section.label} className="mb-6">
           {!collapsed && (
-            <p className="font-mono text-xs tracking-[0.48px] text-serva-gray-300 px-2 mb-2">
+            <p className="font-mono text-sm tracking-[0.48px] text-serva-gray-300 px-2 mb-2">
               {section.label}
             </p>
           )}
@@ -97,7 +97,7 @@ function Sidebar({ sections, activeKey, onSelect, collapsed, onToggleCollapse, c
                 onClick={() => onSelect(item.key)}
                 title={collapsed ? item.label : undefined}
                 className={cn(
-                  "flex items-center gap-2 h-[32px] rounded-[4px] text-sm transition-colors cursor-pointer w-full",
+                  "flex items-center gap-2 h-[32px] rounded-[4px] text-base transition-colors cursor-pointer w-full",
                   collapsed ? "justify-center px-0" : "px-2 text-left",
                   activeKey === item.key
                     ? "bg-light-200 text-serva-gray-600 font-medium"
