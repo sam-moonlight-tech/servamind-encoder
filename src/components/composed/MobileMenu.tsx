@@ -205,6 +205,14 @@ function MobileMenu({
         {/* External links */}
         <div className="flex flex-col gap-1 mb-8">
           <a
+            href="https://servamind.mintlify.app/guides/basics"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 h-11 px-3 rounded-lg text-base text-serva-gray-600 hover:bg-light-200/50 transition-colors cursor-pointer no-underline"
+          >
+            Get Started
+          </a>
+          <a
             href="https://www.servamind.com"
             target="_blank"
             rel="noopener noreferrer"
