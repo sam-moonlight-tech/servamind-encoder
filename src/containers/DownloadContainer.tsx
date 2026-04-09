@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { zipSync } from "fflate";
 import { DownloadStageView } from "@/components/composed";
 import { useWorkflow } from "@/contexts/WorkflowContext";
@@ -29,6 +29,7 @@ async function fetchFileBlob(fileId: string, fileName: string): Promise<Blob> {
 
 function DownloadContainer() {
   const { process, fileResults, reset } = useWorkflow();
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
   const handleDownload = useCallback(async (fileId: string, fileName: string) => {
     const blob = await fetchFileBlob(fileId, fileName);
@@ -37,33 +38,37 @@ function DownloadContainer() {
 
   const handleDownloadAll = useCallback(async () => {
     if (fileResults.length === 0) return;
+    setIsDownloadingAll(true);
+    try {
+      // Single file: download directly
+      if (fileResults.length === 1) {
+        const result = fileResults[0];
+        if (!result.fileId) return;
+        const servaName = result.fileName.replace(/\.[^.]+$/, ".serva");
+        const displayName = process === "compress" ? servaName : result.fileName;
+        await handleDownload(result.fileId, displayName);
+        return;
+      }
 
-    // Single file: download directly
-    if (fileResults.length === 1) {
-      const result = fileResults[0];
-      if (!result.fileId) return;
-      const servaName = result.fileName.replace(/\.[^.]+$/, ".serva");
-      const displayName = process === "compress" ? servaName : result.fileName;
-      await handleDownload(result.fileId, displayName);
-      return;
+      // Multiple files: always zip into a single download
+      const zipData: Record<string, Uint8Array> = {};
+
+      for (const result of fileResults) {
+        if (!result.fileId) continue;
+        const servaName = result.fileName.replace(/\.[^.]+$/, ".serva");
+        const displayName = process === "compress" ? servaName : result.fileName;
+        const blob = await fetchFileBlob(result.fileId, displayName);
+        const buffer = await blob.arrayBuffer();
+        zipData[displayName] = new Uint8Array(buffer);
+      }
+
+      const zipped = zipSync(zipData);
+      const zipBlob = new Blob([zipped as BlobPart], { type: "application/zip" });
+      const dateSuffix = new Date().toISOString().slice(0, 10);
+      triggerBlobDownload(zipBlob, `servamind-${dateSuffix}.zip`);
+    } finally {
+      setIsDownloadingAll(false);
     }
-
-    // Multiple files: always zip into a single download
-    const zipData: Record<string, Uint8Array> = {};
-
-    for (const result of fileResults) {
-      if (!result.fileId) continue;
-      const servaName = result.fileName.replace(/\.[^.]+$/, ".serva");
-      const displayName = process === "compress" ? servaName : result.fileName;
-      const blob = await fetchFileBlob(result.fileId, displayName);
-      const buffer = await blob.arrayBuffer();
-      zipData[displayName] = new Uint8Array(buffer);
-    }
-
-    const zipped = zipSync(zipData);
-    const zipBlob = new Blob([zipped as BlobPart], { type: "application/zip" });
-    const dateSuffix = new Date().toISOString().slice(0, 10);
-    triggerBlobDownload(zipBlob, `servamind-${dateSuffix}.zip`);
   }, [fileResults, process, handleDownload]);
 
   return (
@@ -72,6 +77,7 @@ function DownloadContainer() {
       fileResults={fileResults}
       onDownload={handleDownload}
       onDownloadAll={handleDownloadAll}
+      isDownloadingAll={isDownloadingAll}
       onReset={reset}
     />
   );
