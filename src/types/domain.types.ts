@@ -10,6 +10,7 @@ export interface AuthUser {
   subscriptionStatus: string;
   betaTierActive: boolean;
   betaEnrolledAt: string | null;
+  termsAcceptedAt: string | null;
   onboardingSeen: boolean;
   createdAt: string;
 }
@@ -40,6 +41,9 @@ export interface FileResult {
   fileId: string;
   downloadUrl: string;
   durationMs: number | null;
+  originalSha256Hex?: string;
+  decodedSha256Hex?: string;
+  roundtripHashesMatch?: boolean;
   error?: string;
 }
 

@@ -1,6 +1,6 @@
 import type {
   GoogleCallbackPayload,
-  GoogleCallbackResponse,
+  AuthUserResponse,
   CreateApiKeyResponse,
   ListApiKeysResponse,
   EmailSendLinkPayload,
@@ -12,14 +12,15 @@ import type {
 import type { HttpClient } from "./client";
 
 export interface AuthService {
-  googleCallback(payload: GoogleCallbackPayload): Promise<GoogleCallbackResponse>;
-  getMe(): Promise<GoogleCallbackResponse>;
-  updateProfile(payload: ProfileNameUpdatePayload): Promise<GoogleCallbackResponse>;
+  googleCallback(payload: GoogleCallbackPayload): Promise<AuthUserResponse>;
+  getMe(): Promise<AuthUserResponse>;
+  updateProfile(payload: ProfileNameUpdatePayload): Promise<AuthUserResponse>;
   deleteAccount(): Promise<void>;
   sendEmailLink(payload: EmailSendLinkPayload): Promise<EmailSendLinkResponse>;
-  verifyEmailToken(payload: EmailVerifyPayload): Promise<GoogleCallbackResponse>;
+  verifyEmailToken(payload: EmailVerifyPayload): Promise<AuthUserResponse>;
   logout(): Promise<void>;
-  updateOnboardingSeen(payload: OnboardingSeenUpdate): Promise<GoogleCallbackResponse>;
+  acceptTerms(): Promise<AuthUserResponse>;
+  updateOnboardingSeen(payload: OnboardingSeenUpdate): Promise<AuthUserResponse>;
   createApiKey(): Promise<CreateApiKeyResponse>;
   revokeApiKey(keyId: string): Promise<void>;
   listApiKeys(): Promise<ListApiKeysResponse>;
@@ -28,15 +29,15 @@ export interface AuthService {
 export function createAuthService(client: HttpClient): AuthService {
   return {
     googleCallback(payload) {
-      return client.post<GoogleCallbackResponse>("/auth/google/callback", payload);
+      return client.post<AuthUserResponse>("/auth/google/callback", payload);
     },
 
     getMe() {
-      return client.get<GoogleCallbackResponse>("/auth/me");
+      return client.get<AuthUserResponse>("/auth/me");
     },
 
     updateProfile(payload) {
-      return client.patch<GoogleCallbackResponse>("/auth/me", payload);
+      return client.patch<AuthUserResponse>("/auth/me", payload);
     },
 
     deleteAccount() {
@@ -48,15 +49,19 @@ export function createAuthService(client: HttpClient): AuthService {
     },
 
     verifyEmailToken(payload) {
-      return client.post<GoogleCallbackResponse>("/auth/email/verify", payload);
+      return client.post<AuthUserResponse>("/auth/email/verify", payload);
     },
 
     logout() {
       return client.post<void>("/auth/logout");
     },
 
+    acceptTerms() {
+      return client.post<AuthUserResponse>("/auth/me/accept-terms");
+    },
+
     updateOnboardingSeen(payload) {
-      return client.patch<GoogleCallbackResponse>("/auth/me/onboarding-seen", payload);
+      return client.patch<AuthUserResponse>("/auth/me/onboarding-seen", payload);
     },
 
     createApiKey() {

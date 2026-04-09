@@ -1,9 +1,9 @@
 import type { AuthUser } from "@/types/domain.types";
 import type { AuthProvider, SignInCredentials } from "../auth.provider";
 import { authService } from "@/services/api";
-import type { GoogleCallbackResponse } from "@/types/api.types";
+import type { AuthUserResponse } from "@/types/api.types";
 
-function toAuthUser(response: GoogleCallbackResponse): AuthUser {
+function toAuthUser(response: AuthUserResponse): AuthUser {
   return {
     id: response.user_id,
     email: response.email,
@@ -12,6 +12,7 @@ function toAuthUser(response: GoogleCallbackResponse): AuthUser {
     subscriptionStatus: response.subscription_status,
     betaTierActive: response.beta_tier_active,
     betaEnrolledAt: response.beta_enrolled_at,
+    termsAcceptedAt: response.terms_accepted_at ?? null,
     onboardingSeen: response.onboarding_seen,
     createdAt: response.created_at,
   };

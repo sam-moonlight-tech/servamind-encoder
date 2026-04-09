@@ -23,7 +23,7 @@ function PrivacyConsentScreen({ onContinue }: PrivacyConsentScreenProps) {
         <h1 className="text-[20px] font-semibold text-serva-gray-600 leading-[1.1] tracking-[-0.6px]">
           Your privacy, your choice
         </h1>
-        <p className="text-[12px] text-serva-gray-400 leading-normal">
+        <p className="text-sm text-serva-gray-400 leading-normal">
           To help improve Servamind, we collect usage data using cookies and
           analytics tools. You can change this any time in Settings.
         </p>
@@ -71,7 +71,7 @@ function PrivacyConsentScreen({ onContinue }: PrivacyConsentScreenProps) {
               rel="noopener noreferrer"
               className="underline text-core-purple"
             >
-              Terms of Service
+              Terms of Use
             </a>{" "}
             and{" "}
             <a

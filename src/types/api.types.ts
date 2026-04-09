@@ -13,7 +13,7 @@ export interface GoogleCallbackPayload {
   token: string;
 }
 
-export interface GoogleCallbackResponse {
+export interface AuthUserResponse {
   user_id: string;
   email: string;
   name: string | null;
@@ -21,6 +21,7 @@ export interface GoogleCallbackResponse {
   subscription_status: "active" | "canceled" | "past_due" | "none";
   beta_tier_active: boolean;
   beta_enrolled_at: string | null;
+  terms_accepted_at: string | null;
   onboarding_seen: boolean;
   created_at: string;
 }
@@ -74,6 +75,9 @@ export interface EncodeStreamResponse {
   encoded_size_bytes: number;
   file_size_bytes: number;
   savings_percent: number;
+  original_sha256_hex: string;
+  decoded_sha256_hex: string;
+  roundtrip_hashes_match: boolean;
 }
 
 // Decoding

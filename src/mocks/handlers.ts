@@ -1,7 +1,7 @@
 import { http, HttpResponse, delay } from "msw";
 import { env } from "@/config/env";
 import {
-  mockGoogleCallbackResponse,
+  mockAuthUserResponse,
   mockEmailSendLinkResponse,
   mockEmailVerifyResponse,
   mockCreateApiKeyResponse,
@@ -24,7 +24,7 @@ const baseUrl = env.apiUrl;
 let encodeInitCount = 0;
 
 // Mutable mock user state (persists across requests within a session)
-const mockUser = { ...mockGoogleCallbackResponse };
+const mockUser = { ...mockAuthUserResponse };
 
 export const handlers = [
   // Auth
@@ -56,11 +56,17 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
+  http.post(`${baseUrl}/auth/me/accept-terms`, () => {
+    // Idempotent — only set the first time.
+    if (mockUser.terms_accepted_at == null) {
+      mockUser.terms_accepted_at = new Date().toISOString();
+    }
+    return HttpResponse.json(mockUser);
+  }),
+
   http.patch(`${baseUrl}/auth/me/onboarding-seen`, () => {
-    return HttpResponse.json({
-      ...mockGoogleCallbackResponse,
-      onboarding_seen: true,
-    });
+    mockUser.onboarding_seen = true;
+    return HttpResponse.json(mockUser);
   }),
 
   http.post(`${baseUrl}/auth/logout`, () => {

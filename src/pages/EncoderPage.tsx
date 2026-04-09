@@ -24,7 +24,7 @@ const processToSidebarKey: Record<ProcessType, string> = {
 
 function EncoderPage() {
   const { process, setProcess, hasFile, stage, isUploading, isScrolled, setIsScrolled } = useWorkflow();
-  const { isLoading } = useAuth();
+  const { isLoading, user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -65,7 +65,9 @@ function EncoderPage() {
 
   return (
     <AppShell>
-      {!isLoading && <OnboardingContainer />}
+      {/* key on user id so onboarding state resets when a different account
+          signs in (e.g. after account deletion + re-signup in the same browser) */}
+      {!isLoading && <OnboardingContainer key={user?.id ?? "anon"} />}
       <NavBarContainer />
       <div className="flex flex-1 px-2.5 gap-0 min-h-0">
         <div className="hidden md:flex">

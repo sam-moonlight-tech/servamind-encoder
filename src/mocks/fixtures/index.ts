@@ -1,5 +1,5 @@
 import type {
-  GoogleCallbackResponse,
+  AuthUserResponse,
   CreateApiKeyResponse,
   ListApiKeysResponse,
   EncodeInitResponse,
@@ -17,7 +17,7 @@ import type {
   PaymentMethod,
 } from "@/types/api.types";
 
-export const mockGoogleCallbackResponse: GoogleCallbackResponse = {
+export const mockAuthUserResponse: AuthUserResponse = {
   user_id: "dev-user",
   email: "dev@example.com",
   name: null,
@@ -25,6 +25,7 @@ export const mockGoogleCallbackResponse: GoogleCallbackResponse = {
   subscription_status: "active",
   beta_tier_active: true,
   beta_enrolled_at: "2025-01-01T00:00:00Z",
+  terms_accepted_at: null,
   onboarding_seen: false,
   created_at: "2025-01-01T00:00:00Z",
 };
@@ -34,7 +35,7 @@ export const mockEmailSendLinkResponse: EmailSendLinkResponse = {
   message: "Magic link sent successfully",
 };
 
-export const mockEmailVerifyResponse: GoogleCallbackResponse = {
+export const mockEmailVerifyResponse: AuthUserResponse = {
   user_id: "dev-user-email",
   email: "dev@example.com",
   name: null,
@@ -42,6 +43,7 @@ export const mockEmailVerifyResponse: GoogleCallbackResponse = {
   subscription_status: "active",
   beta_tier_active: true,
   beta_enrolled_at: "2025-01-01T00:00:00Z",
+  terms_accepted_at: null,
   onboarding_seen: false,
   created_at: "2025-01-01T00:00:00Z",
 };
@@ -76,6 +78,9 @@ export const mockEncodeStreamResponse: EncodeStreamResponse = {
   encoded_size_bytes: 480,
   file_size_bytes: 530,
   savings_percent: 53.13,
+  original_sha256_hex: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  decoded_sha256_hex: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  roundtrip_hashes_match: true,
 };
 
 export const mockDecodeInitResponse: DecodeInitResponse = {

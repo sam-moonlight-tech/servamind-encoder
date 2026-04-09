@@ -10,14 +10,20 @@ function OnboardingContainer() {
   const {
     step,
     completed,
+    termsAccepted,
     goToCheckEmail,
     goToWelcome,
     goToLogin,
     goToPrivacy,
     goToTutorial,
     nextTutorialStep,
+    acceptTerms,
     completeOnboarding,
-  } = useOnboardingFlow(user?.onboardingSeen);
+  } = useOnboardingFlow({
+    userId: user?.id,
+    termsAcceptedAt: user?.termsAcceptedAt,
+    onboardingSeen: user?.onboardingSeen,
+  });
 
   const handleEmailSubmit = useCallback(
     async (email: string) => {
@@ -58,9 +64,23 @@ function OnboardingContainer() {
     }
   }, [signIn, goToWelcome]);
 
+  // Welcome → Privacy (first-time) or directly to Tutorial (returning user
+  // who already accepted TOS but abandoned before finishing the tutorial).
+  const handleWelcomeContinue = useCallback(() => {
+    if (termsAccepted) {
+      goToTutorial();
+    } else {
+      goToPrivacy();
+    }
+  }, [termsAccepted, goToPrivacy, goToTutorial]);
+
+  // Privacy continue: record TOS acceptance immediately (local + backend),
+  // then advance. This is the fix for the re-prompt bug — TOS is persisted
+  // the moment the user clicks Continue, not at the end of the tutorial.
   const handlePrivacyContinue = useCallback(() => {
+    acceptTerms();
     goToTutorial();
-  }, [goToTutorial]);
+  }, [acceptTerms, goToTutorial]);
 
   // When already authenticated, skip login/check-email → go to welcome
   useEffect(() => {
@@ -89,7 +109,7 @@ function OnboardingContainer() {
       onGoogleCredential={handleGoogleCredential}
       onUseAnotherEmail={handleUseAnotherEmail}
       onMockVerify={env.authProvider === "mock" ? handleMockVerify : undefined}
-      onWelcomeContinue={goToPrivacy}
+      onWelcomeContinue={handleWelcomeContinue}
       onPrivacyContinue={handlePrivacyContinue}
       onTutorialNext={nextTutorialStep}
       onTutorialSkip={completeOnboarding}
