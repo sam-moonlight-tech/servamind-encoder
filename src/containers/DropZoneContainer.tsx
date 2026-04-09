@@ -22,7 +22,6 @@ interface CachedFileState {
   files: File[];
   fileStatuses: Map<string, FileStatus>;
   encodingResults: Map<string, EncodingFileResult>;
-  encodingIndex: number;
 }
 
 const fileStateCache = new Map<ProcessType, CachedFileState>();
@@ -52,11 +51,12 @@ function DropZoneContainer() {
   const [showPaymentRequiredModal, setShowPaymentRequiredModal] = useState(false);
   const [showFileTypeAlert, setShowFileTypeAlert] = useState(false);
   const [encodingResults, setEncodingResults] = useState<Map<string, EncodingFileResult>>(() => cached?.encodingResults ?? new Map());
-  const [encodingIndex, setEncodingIndex] = useState(() => cached?.encodingIndex ?? 0);
   const [fileProgress, setFileProgress] = useState<Map<string, number>>(new Map());
   const [fileErrors, setFileErrors] = useState<Map<string, string>>(new Map());
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
+  const cancelledKeysRef = useRef<Set<string>>(new Set());
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
 
   // When a reset is triggered (e.g. abandon session), clear all local state
   const initialResetCount = useRef(resetCount);
@@ -67,7 +67,6 @@ function DropZoneContainer() {
       setEncodingResults(new Map());
       setFileProgress(new Map());
       setFileErrors(new Map());
-      setEncodingIndex(0);
       fileStateCache.delete(process);
       fileStateCache.delete(process === "compress" ? "decompress" : "compress");
       initialResetCount.current = resetCount;
@@ -75,9 +74,9 @@ function DropZoneContainer() {
   }, [resetCount, process]);
 
   // Keep a ref to latest state for the unmount cleanup
-  const stateRef = useRef({ files, fileStatuses, encodingResults, encodingIndex });
+  const stateRef = useRef({ files, fileStatuses, encodingResults });
   useEffect(() => {
-    stateRef.current = { files, fileStatuses, encodingResults, encodingIndex };
+    stateRef.current = { files, fileStatuses, encodingResults };
   });
 
   // Save local file state to cache on unmount so it persists across tab switches
@@ -102,10 +101,11 @@ function DropZoneContainer() {
   const handleFileSelect = useCallback((selectedFiles: File[]) => {
     if (selectedFiles.length === 0) return;
 
-    // In encode mode, reject .serva files with a dialog
+    // In encode mode, filter out .serva files and warn — but allow non-.serva files through
     if (process === "compress" && selectedFiles.some((f) => isCompressedFile(f))) {
       setShowFileTypeAlert(true);
-      return;
+      selectedFiles = selectedFiles.filter((f) => !isCompressedFile(f));
+      if (selectedFiles.length === 0) return;
     }
 
     // In decode mode, reject non-.serva files with a dialog
@@ -176,8 +176,9 @@ function DropZoneContainer() {
     async (compress: boolean, privateKey: string) => {
       if (files.length === 0) return;
       setIsUploading(true);
-      setEncodingIndex(0);
       setEncodingResults(new Map());
+      cancelledKeysRef.current = new Set();
+      abortControllersRef.current = new Map();
 
       // Set all files to waiting
       setFileStatuses(() => {
@@ -190,12 +191,13 @@ function DropZoneContainer() {
       const orderedResults: FileResult[] = [];
 
       if (compress) {
-        let idx = 0;
         for (const file of files) {
-          idx++;
-          setEncodingIndex(idx);
+          // Skip files cancelled while waiting
+          if (cancelledKeysRef.current.has(fileKey(file))) continue;
           setStatus(file, "encoding");
           startSimulatedProgress(file);
+          const encodeController = new AbortController();
+          abortControllersRef.current.set(fileKey(file), encodeController);
           try {
             const start = performance.now();
             const result = await encodeAsync({
@@ -203,8 +205,15 @@ function DropZoneContainer() {
               fileReference: crypto.randomUUID(),
               idempotencyKey: crypto.randomUUID(),
               userPassword: privateKey,
+              signal: encodeController.signal,
             });
             const durationMs = performance.now() - start;
+            abortControllersRef.current.delete(fileKey(file));
+            // Discard result if cancelled while in-flight
+            if (cancelledKeysRef.current.has(fileKey(file))) {
+              stopSimulatedProgress(file);
+              continue;
+            }
             stopSimulatedProgress(file);
             setStatus(file, "encoded");
 
@@ -224,9 +233,17 @@ function DropZoneContainer() {
               fileId: result.init.file_id,
               downloadUrl: result.init.download_url,
               durationMs,
+              originalSha256Hex: result.originalSha256Hex,
+              decodedSha256Hex: result.decodedSha256Hex,
+              roundtripHashesMatch: result.roundtripHashesMatch,
             });
             hasSuccess = true;
           } catch (err) {
+            abortControllersRef.current.delete(fileKey(file));
+            if (cancelledKeysRef.current.has(fileKey(file))) {
+              stopSimulatedProgress(file);
+              continue;
+            }
             if (err instanceof ApiError && err.isPaymentMethodRequired) {
               setIsUploading(false);
               setShowPaymentRequiredModal(true);
@@ -249,20 +266,28 @@ function DropZoneContainer() {
         }
         setProcess("compress");
       } else {
-        let idx = 0;
         for (const file of files) {
-          idx++;
-          setEncodingIndex(idx);
+          // Skip files cancelled while waiting
+          if (cancelledKeysRef.current.has(fileKey(file))) continue;
           setStatus(file, "encoding");
           startSimulatedProgress(file);
+          const decodeController = new AbortController();
+          abortControllersRef.current.set(fileKey(file), decodeController);
           try {
             const start = performance.now();
             const result = await decodeAsync({
               file,
               fileReference: crypto.randomUUID(),
               userPassword: privateKey,
+              signal: decodeController.signal,
             });
             const durationMs = performance.now() - start;
+            abortControllersRef.current.delete(fileKey(file));
+            // Discard result if cancelled while in-flight
+            if (cancelledKeysRef.current.has(fileKey(file))) {
+              stopSimulatedProgress(file);
+              continue;
+            }
             stopSimulatedProgress(file);
             setStatus(file, "complete");
             orderedResults.push({
@@ -275,6 +300,11 @@ function DropZoneContainer() {
             });
             hasSuccess = true;
           } catch (err) {
+            abortControllersRef.current.delete(fileKey(file));
+            if (cancelledKeysRef.current.has(fileKey(file))) {
+              stopSimulatedProgress(file);
+              continue;
+            }
             if (err instanceof ApiError && err.isPaymentMethodRequired) {
               setIsUploading(false);
               setShowPaymentRequiredModal(true);
@@ -304,11 +334,15 @@ function DropZoneContainer() {
         for (const result of orderedResults) {
           addFileResult(result);
         }
+        // Synchronously clear stateRef before setStage triggers unmount — the
+        // unmount cleanup reads stateRef to decide whether to persist to cache,
+        // but effects (which normally update stateRef) don't run on the unmount
+        // render, so stateRef would otherwise hold stale mid-encoding state.
+        stateRef.current = { files: [], fileStatuses: new Map(), encodingResults: new Map() };
         setFiles([]);
         setFileStatuses(new Map());
         setEncodingResults(new Map());
         setFileProgress(new Map());
-        setEncodingIndex(0);
         setStage("download");
       }
       // If no files succeeded, stay on the upload stage showing per-file errors
@@ -323,20 +357,57 @@ function DropZoneContainer() {
     setEncodingResults(new Map());
     setFileProgress(new Map());
     setFileErrors(new Map());
-    setEncodingIndex(0);
     fileStateCache.delete(process);
     setHasFile(false);
   }, [setHasFile, process]);
 
   const handleRemove = useCallback((index: number) => {
-    setFiles((prev) => {
-      const next = [...prev];
-      next.splice(index, 1);
-      if (next.length === 0) {
-        setHasFile(false);
-      }
-      return next;
-    });
+    const { files: currentFiles, fileStatuses: currentStatuses } = stateRef.current;
+    const file = currentFiles[index];
+    if (!file) return;
+
+    const key = fileKey(file);
+    const status = currentStatuses.get(key);
+
+    if (status === "encoding") {
+      // In-flight: abort the request and remove the row immediately
+      cancelledKeysRef.current.add(key);
+      abortControllersRef.current.get(key)?.abort();
+      abortControllersRef.current.delete(key);
+      setFiles((prev) => {
+        const next = [...prev];
+        next.splice(index, 1);
+        if (next.length === 0) setHasFile(false);
+        return next;
+      });
+      setFileStatuses((prev) => {
+        const next = new Map(prev);
+        next.delete(key);
+        return next;
+      });
+    } else if (status === "waiting") {
+      // Queued but not started: cancel silently and remove row
+      cancelledKeysRef.current.add(key);
+      setFiles((prev) => {
+        const next = [...prev];
+        next.splice(index, 1);
+        if (next.length === 0) setHasFile(false);
+        return next;
+      });
+      setFileStatuses((prev) => {
+        const next = new Map(prev);
+        next.delete(key);
+        return next;
+      });
+    } else {
+      // Pre-encoding (ready/error): just remove
+      setFiles((prev) => {
+        const next = [...prev];
+        next.splice(index, 1);
+        if (next.length === 0) setHasFile(false);
+        return next;
+      });
+    }
   }, [setHasFile]);
 
   const handleAddMore = useCallback(() => {
@@ -450,7 +521,10 @@ function DropZoneContainer() {
         processType={process}
         canStart={canStart}
         uploading={isUploading}
-        encodingProgress={isUploading ? { current: encodingIndex, total: files.length } : undefined}
+        encodingProgress={isUploading ? {
+          current: files.filter(f => { const s = fileStatuses.get(fileKey(f)); return s === "encoding" || s === "encoded" || s === "complete" || s === "error"; }).length,
+          total: files.length,
+        } : undefined}
         isDragging={isDragging}
         onFileSelect={handleFileSelect}
         onClear={handleClear}

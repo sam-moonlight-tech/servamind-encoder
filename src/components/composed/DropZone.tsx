@@ -33,6 +33,9 @@ function DropZone({
 }: DropZoneProps) {
   const isDecoding = processType === "decompress";
   const inputRef = useRef<HTMLInputElement>(null);
+  // Decode mode: restrict picker to .serva only.
+  // Encode mode: no accept filter — the browser can't exclude a single extension,
+  // so we accept everything and enforce the .serva exclusion in JS (handleFileSelect).
   const acceptAttr = isDecoding ? `.${COMPRESSED_FILE_TYPE}` : undefined;
   const { RiveComponent, rive } = useRive({
     src: "/Aurora_mk4.riv",

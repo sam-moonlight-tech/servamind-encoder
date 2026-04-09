@@ -84,6 +84,7 @@ function workflowReducer(
       return {
         ...state,
         resetCount: state.resetCount + 1,
+        isUploading: false,
         processes: {
           compress: { ...perProcessInitial },
           decompress: { ...perProcessInitial },

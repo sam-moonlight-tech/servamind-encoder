@@ -166,6 +166,14 @@ function ServaIcon() {
   );
 }
 
+function ReductionArrowIcon() {
+  return (
+    <svg width="9" height="9" viewBox="0 0 9 9" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+      <path d="M4.31998 0.479981V8.47998M4.31998 8.47998L0.47998 4.63998M4.31998 8.47998L8.15998 4.63998" stroke="currentColor" strokeWidth="0.96" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 function CheckIcon() {
   return (
     <svg
@@ -305,8 +313,8 @@ function FileRow({
                 Encoded: {file.encodedSize}
               </span>
               {file.reductionPercent != null && file.reductionPercent > 0 && (
-                <span className="text-serva-green">
-                  (-{file.reductionPercent}%)
+                <span className="text-serva-green flex items-center gap-0.5">
+                  (<ReductionArrowIcon />{file.reductionPercent}%)
                 </span>
               )}
             </div>
@@ -363,23 +371,52 @@ function FileRow({
         )}
 
         {isEncoding && (
-          <div className="flex items-center gap-2">
-            <HoloProgressBar
-              value={file.encodingProgress ?? 0}
-              indeterminate={file.encodingProgress == null}
-            />
-            <span className="text-sm text-serva-gray-400 leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
-              {file.encodingProgress != null
-                ? `${file.encodingProgress}%`
-                : `${processLabel}...`}
-            </span>
-          </div>
+          <>
+            <div className="flex items-center gap-2">
+              <HoloProgressBar
+                value={file.encodingProgress ?? 0}
+                indeterminate={file.encodingProgress == null}
+              />
+              <span className="text-sm text-serva-gray-400 leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
+                {file.encodingProgress != null
+                  ? `${file.encodingProgress}%`
+                  : `${processLabel}...`}
+              </span>
+            </div>
+            {onRemove && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove(index);
+                }}
+                className="cursor-pointer hover:opacity-70"
+              >
+                <XMarkIcon />
+              </button>
+            )}
+          </>
         )}
 
+
         {file.status === "waiting" && (
-          <span className="text-sm text-serva-gray-200 leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
-            Waiting
-          </span>
+          <>
+            <span className="text-sm text-serva-gray-200 leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
+              Waiting
+            </span>
+            {onRemove && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove(index);
+                }}
+                className="cursor-pointer hover:opacity-70"
+              >
+                <XMarkIcon />
+              </button>
+            )}
+          </>
         )}
 
         {(isReady || file.status === "uploading") && (
@@ -433,7 +470,7 @@ function FileTable({ files, encoding, processLabel, onRemove, onDownload, classN
   if (encoding) {
     return (
       <div
-        className={cn("rounded-[16px] overflow-y-auto scrollbar-none animate-holo-spin", className)}
+        className={cn("rounded-[16px] overflow-y-auto animate-holo-spin", className)}
         style={{
           border: "2px solid transparent",
           backgroundImage:
@@ -448,7 +485,7 @@ function FileTable({ files, encoding, processLabel, onRemove, onDownload, classN
             file={file}
             index={i}
             processLabel={processLabel}
-            onRemove={file.status === "error" ? onRemove : undefined}
+            onRemove={["error", "waiting", "encoding"].includes(file.status) ? onRemove : undefined}
             onDownload={onDownload}
           />
         ))}
@@ -457,21 +494,18 @@ function FileTable({ files, encoding, processLabel, onRemove, onDownload, classN
   }
 
   return (
-    <div
-      className={cn(
-        "border border-light-200 rounded-[16px] overflow-clip scrollbar-none",
-        className
-      )}
-    >
-      {files.map((file, i) => (
-        <FileRow
-          key={`${file.name}-${i}`}
-          file={file}
-          index={i}
-          onRemove={onRemove}
-          onDownload={onDownload}
-        />
-      ))}
+    <div className="border border-light-200 rounded-[16px] overflow-hidden">
+      <div className={cn("overflow-x-hidden", className)}>
+        {files.map((file, i) => (
+          <FileRow
+            key={`${file.name}-${i}`}
+            file={file}
+            index={i}
+            onRemove={onRemove}
+            onDownload={onDownload}
+          />
+        ))}
+      </div>
     </div>
   );
 }

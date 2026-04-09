@@ -15,12 +15,12 @@ function FileTypeAlertModal({ open, processType, onClose }: FileTypeAlertModalPr
 
   const title =
     processType === "compress"
-      ? ".serva files cannot be encoded"
+      ? "Your .serva files are already encoded"
       : "Only .serva files can be decoded";
 
   const description =
     processType === "compress"
-      ? "The file you selected is already a .serva file. Switch to decode mode to decode it."
+      ? ".serva files don't need to be encoded again. We've removed them from your upload queue."
       : "Only .serva files can be decoded. Switch to encode mode to encode this file.";
 
   const content = (

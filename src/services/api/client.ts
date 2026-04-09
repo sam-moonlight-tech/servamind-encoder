@@ -47,19 +47,21 @@ export function createHttpClient(config: HttpClientConfig) {
     return request<T>(path, { method: "GET" });
   }
 
-  function post<T>(path: string, body?: unknown): Promise<T> {
+  function post<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
     const isFormData = body instanceof FormData;
     return request<T>(path, {
       method: "POST",
       headers: isFormData ? {} : { "Content-Type": "application/json" },
       body: isFormData ? body : body ? JSON.stringify(body) : undefined,
+      signal,
     });
   }
 
   function postBinary<T>(
     path: string,
     body: ArrayBuffer,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
+    signal?: AbortSignal
   ): Promise<T> {
     return request<T>(path, {
       method: "POST",
@@ -68,16 +70,18 @@ export function createHttpClient(config: HttpClientConfig) {
         ...headers,
       },
       body,
+      signal,
     });
   }
 
-  async function getBlob(path: string): Promise<Response> {
+  async function getBlob(path: string, signal?: AbortSignal): Promise<Response> {
     const authHeaders = config.getAuthHeaders?.() ?? {};
 
     const response = await fetch(`${config.baseUrl}${path}`, {
       method: "GET",
       credentials: "include",
       headers: { ...authHeaders },
+      signal,
     });
 
     if (!response.ok) {

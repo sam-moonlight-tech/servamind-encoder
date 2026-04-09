@@ -6,6 +6,7 @@ interface DecodeParams {
   file: File;
   fileReference: string;
   userPassword: string;
+  signal?: AbortSignal;
   onInitComplete?: (data: DecodeInitResponse) => void;
   onStreamComplete?: () => void;
 }
@@ -21,6 +22,7 @@ export function useDecode() {
       file,
       fileReference,
       userPassword,
+      signal,
       onInitComplete,
       onStreamComplete,
     }: DecodeParams): Promise<DecodeResult> => {
@@ -28,11 +30,12 @@ export function useDecode() {
         file_reference: fileReference,
         file_size_bytes: file.size,
         user_password: userPassword,
-      });
+      }, signal);
       onInitComplete?.(init);
 
       const buffer = await file.arrayBuffer();
-      const stream = await encoderService.decodeStream(buffer, init.streaming_token, userPassword);
+      if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+      const stream = await encoderService.decodeStream(buffer, init.streaming_token, userPassword, signal);
       onStreamComplete?.();
 
       return { init, stream };

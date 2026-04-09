@@ -199,19 +199,36 @@ function DownloadStageView({
   };
 
   const handleDownloadReport = useCallback(() => {
-    const headers = ["File Name", "Original Size (bytes)", "Encoded Size (bytes)", "Reduction (%)", "Duration (s)"];
+    const headers = [
+      "File Name",
+      "Original Size (bytes)",
+      "Encoded Size (bytes)",
+      "Reduction (%)",
+      "Duration (s)",
+      ...(isDecoding
+        ? []
+        : ["Original SHA-256", "Decoded SHA-256", "Roundtrip Match"]),
+    ];
     const rows = fileResults.map((r) => {
       const reduction = r.encodedSize !== null && r.originalSize > 0
         ? Math.round(((r.originalSize - r.encodedSize) / r.originalSize) * 100)
         : "";
       const duration = r.durationMs !== null ? (r.durationMs / 1000).toFixed(1) : "";
-      return [
+      const row: (string | number)[] = [
         r.fileName,
         r.originalSize,
         r.encodedSize ?? "",
         reduction,
         duration,
-      ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",");
+      ];
+      if (!isDecoding) {
+        row.push(
+          r.originalSha256Hex ?? "",
+          r.decodedSha256Hex ?? "",
+          r.roundtripHashesMatch == null ? "" : r.roundtripHashesMatch ? "true" : "false",
+        );
+      }
+      return row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",");
     });
     const csv = [headers.join(","), ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -221,7 +238,7 @@ function DownloadStageView({
     a.download = `servamind-report-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [fileResults]);
+  }, [fileResults, isDecoding]);
 
   return (
     <div className={cn("space-y-0", className)}>
@@ -259,7 +276,7 @@ function DownloadStageView({
         <FileTable
           files={fileTableItems}
           onDownload={handleDownloadByIndex}
-          className="max-h-[448px] overflow-y-auto"
+          className="max-h-[60vh] md:max-h-[448px] overflow-y-auto scrollbar-visible"
         />
       </div>
 
@@ -352,7 +369,7 @@ function DownloadStageView({
                       <ServaEncoderBadgeIcon />
                     </span>
                     <SmallArrow />
-                    <span className="bg-light-300 rounded-[8px] px-3 py-2 font-mono text-xs text-serva-gray-600 tracking-[1.2px] leading-[1.1]">
+                    <span className="bg-light-300 rounded-[8px] px-3 py-2 font-mono text-xs text-serva-gray-600 tracking-[1.2px] leading-[1.1] whitespace-nowrap">
                       MODEL TRAINING
                     </span>
                   </div>
@@ -362,7 +379,7 @@ function DownloadStageView({
                   </p>
                 </div>
                 <a
-                  href="https://servamind.mintlify.app/guides/basics"
+                  href="https://servamind.mintlify.app/tutorials/training/resnet-from-servas-tutorial"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="no-underline"
