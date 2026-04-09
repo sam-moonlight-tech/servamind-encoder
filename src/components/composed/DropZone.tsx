@@ -1,12 +1,5 @@
 import { useRef, useEffect } from "react";
-import {
-  useRive,
-  useViewModel,
-  useViewModelInstance,
-  useViewModelInstanceBoolean,
-  Layout,
-  Fit,
-} from "@rive-app/react-webgl2";
+import { useRive, Layout, Fit } from "@rive-app/react-webgl2";
 import { cn } from "@/lib/utils";
 import { COMPRESSED_FILE_TYPE } from "@/config/constants";
 import type { ProcessType } from "@/types/domain.types";
@@ -42,24 +35,12 @@ function DropZone({
   const inputRef = useRef<HTMLInputElement>(null);
   const acceptAttr = isDecoding ? `.${COMPRESSED_FILE_TYPE}` : undefined;
   const { RiveComponent, rive } = useRive({
-    src: "/Aurora_mk2.riv",
+    src: "/Aurora_mk4.riv",
     artboard: "Artboard",
     stateMachines: "State Machine 1",
     autoplay: true,
-    autoBind: true,
     layout: RIVE_LAYOUT,
   });
-
-  // Keep the Rive animation always active
-  const viewModel = useViewModel(rive, { name: "ViewModel1" });
-  const vmInstance = useViewModelInstance(viewModel, { useDefault: true, rive });
-  const { setValue: setIsHovering } = useViewModelInstanceBoolean("isHovering", vmInstance);
-
-  useEffect(() => {
-    if (setIsHovering) {
-      setIsHovering(true);
-    }
-  }, [setIsHovering]);
 
   // Resume animation when tab regains visibility (WebGL pauses on hidden tabs)
   useEffect(() => {
