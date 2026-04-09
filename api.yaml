@@ -49,7 +49,7 @@ info:
 
     | Type | Format | TTL | Notes |
     |------|--------|-----|-------|
-    | **Session Token** | `sess_...` | 24 hours | Also available via httpOnly cookie. |
+    | **Session Token** | `sess_...` | 5 hours (default; configurable) | Also available via httpOnly cookie. |
     | **Google ID Token** | JWT (3 base64 segments) | ~1 hour | Validated against Google tokeninfo API on every request. |
     | **Service API Key** | `sk_live_...` | Never (until revoked) | For programmatic / server-to-server access. |
 
@@ -122,6 +122,7 @@ x-cors:
 x-frontend-endpoints:
   - "POST /auth/google/callback"
   - "GET /auth/me"
+  - "POST /auth/me/accept-terms"
   - "PATCH /auth/me/onboarding-seen"
   - "POST /auth/logout"
   - "POST /api/encode"
@@ -168,7 +169,7 @@ components:
       scheme: bearer
       description: |
         Accepts one of three credential types (detected by format):
-        - **Session token** (`sess_...`) — O(1) Redis lookup, 24h TTL. Preferred.
+        - **Session token** (`sess_...`) — O(1) Redis lookup, 5h default TTL (`SESSION_TOKEN_TTL_SECONDS`). Preferred.
         - **Google ID Token** (JWT — three `.`-separated base64 segments) — calls Google tokeninfo API per request.
         - **Service API Key** (`sk_live_...`) — HMAC-SHA256 constant-time validation, never expires unless revoked.
 
@@ -265,6 +266,12 @@ components:
           type: boolean
           description: Whether the user has completed onboarding.
           example: false
+        terms_accepted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the user first accepted the Terms of Service (audit). Null if never accepted.
+          example: "2025-11-01T00:00:00Z"
         created_at:
           type: string
           format: date-time
@@ -844,7 +851,7 @@ paths:
 
         The session token is set as an httpOnly `session` cookie — it is **not** returned in the
         response body. The browser sends it automatically on subsequent requests.
-        The cookie expires after **24 hours** (configurable via `SESSION_TOKEN_TTL_SECONDS`).
+        The cookie expires after **5 hours** by default (override via `SESSION_TOKEN_TTL_SECONDS`).
 
         Upon expiry, re-authenticate via Google and call this endpoint again.
       security: []
@@ -969,6 +976,33 @@ paths:
       responses:
         "204":
           description: Account deleted; session revoked.
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me/accept-terms:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    post:
+      tags: [Authentication]
+      summary: Accept Terms of Service
+      operationId: acceptTerms
+      description: |
+        Records the first acceptance of the Terms of Service. Idempotent: if already accepted,
+        returns the current profile without changing the stored timestamp.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current user profile with `terms_accepted_at` set (or unchanged if already set).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
         "401":
           description: Authentication required.
           content:
