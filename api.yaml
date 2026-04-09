@@ -523,6 +523,9 @@ components:
         - original_size_bytes
         - encoded_size_bytes
         - savings_percent
+        - original_sha256_hex
+        - decoded_sha256_hex
+        - roundtrip_hashes_match
       properties:
         status:
           type: string
@@ -549,6 +552,71 @@ components:
             `((original_size_bytes - encoded_size_bytes) / original_size_bytes) * 100`.
             May be negative if the encoded file is larger than the original.
           example: 48.2422
+        original_sha256_hex:
+          type: string
+          description: SHA-256 digest (hex) of the raw uploaded file before compression.
+          example: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        decoded_sha256_hex:
+          type: string
+          description: |
+            SHA-256 digest (hex) of bytes from decompressing the pre-encryption encoded
+            payload (lossless round-trip check against the upload).
+          example: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        roundtrip_hashes_match:
+          type: boolean
+          description: True when original_sha256_hex equals decoded_sha256_hex.
+          example: true
+
+    EncodeRoundtripFailedDetail:
+      type: object
+      description: |
+        Value of FastAPI's `HTTPException.detail` when lossless round-trip verification fails
+        after compression (HTTP 500). Uses the **same** hash field names as
+        `StreamCompleteResponse` (`original_sha256_hex`, `decoded_sha256_hex`,
+        `roundtrip_hashes_match`) — no separate wrapper object. On byte mismatch, both
+        digests are included and `roundtrip_hashes_match` is `false`. If decompression
+        throws before a payload exists, only `original_sha256_hex` may be set.
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum: [encoding_roundtrip_failed]
+        message:
+          type: string
+          description: Human-readable reason (e.g. byte mismatch vs decompress error).
+        original_sha256_hex:
+          type: string
+          description: |
+            SHA-256 (hex) of the raw upload. Included whenever a digest was computed
+            (always on byte mismatch; also when decompress fails after compress).
+        decoded_sha256_hex:
+          type: string
+          description: |
+            SHA-256 (hex) of the decompressed payload. Omitted if decompression raised
+            before a result was produced.
+        roundtrip_hashes_match:
+          type: boolean
+          description: |
+            Present only when both `original_sha256_hex` and `decoded_sha256_hex` are set.
+            On mismatch, `false` (both hash fields are still present).
+
+    EncodeStream500Response:
+      type: object
+      description: |
+        FastAPI error body for `POST /api/stream/{file_reference}` when status is 500.
+        The `detail` field mirrors `HTTPException.detail`: either a plain string for generic
+        failures (`Encoding failed`, `Encryption failed`) or `EncodeRoundtripFailedDetail`.
+      required:
+        - detail
+      properties:
+        detail:
+          oneOf:
+            - type: string
+              description: Generic encoding/encryption failure message (e.g. encoding or encryption step).
+              example: "Encoding failed"
+            - $ref: "#/components/schemas/EncodeRoundtripFailedDetail"
 
     # ── Decode ────────────────────────────────────────────────────────────────
 
@@ -1463,7 +1531,11 @@ paths:
               description: Raw file bytes. Streamed directly — no multipart wrapper.
       responses:
         "200":
-          description: Encoding complete. Proceed to `GET /download/{file_id}`.
+          description: |
+            Encoding complete. Response includes `original_size_bytes`, `encoded_size_bytes`,
+            `savings_percent`, and SHA-256 fields (`original_sha256_hex`, `decoded_sha256_hex`,
+            `roundtrip_hashes_match`) from the pre-encryption round-trip check. Proceed to
+            `GET /download/{file_id}`.
           content:
             application/json:
               schema:
@@ -1489,11 +1561,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
-          description: Encoding or encryption failure.
+          description: |
+            Encoding or encryption failure. For round-trip verification failure,
+            `detail` is `EncodeRoundtripFailedDetail`: same hash fields as a successful
+            stream response (`original_sha256_hex`, `decoded_sha256_hex`, `roundtrip_hashes_match`),
+            included when computable (both digests on byte mismatch). Other failures use
+            `detail` as a plain string (e.g. `"Encoding failed"`).
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/EncodeStream500Response"
         "429":
           description: Rate limit exceeded (20 req/min per IP). See `Retry-After` header.
           headers:
