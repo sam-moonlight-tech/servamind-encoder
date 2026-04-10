@@ -23,7 +23,7 @@ const ContentPanel = forwardRef<HTMLDivElement, ContentPanelProps>(
           ref={ref}
           onScroll={onScroll}
           className={cn(
-            "flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-none",
+            "flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-none pb-[env(safe-area-inset-bottom)]",
             contentClassName
           )}
         >
