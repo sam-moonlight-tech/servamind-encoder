@@ -365,6 +365,8 @@ function SettingsPage() {
                               <p className="text-xs text-serva-gray-400">
                                 If you need to keep encoding after your free TB,{"\n"}
                                 you can continue with pay-as-you-go pricing.
+                                {" "}If you have any billing issues, contact{" "}
+                                <a href="mailto:info@servamind.com" className="underline hover:text-serva-gray-600 transition-colors">info@servamind.com</a>.
                               </p>
                               <p className="text-xs font-medium text-serva-gray-400">
                                 $0.005 per GB
