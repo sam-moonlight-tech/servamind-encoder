@@ -304,7 +304,7 @@ function FileRow({
 
         {/* Size info — mobile: encoded only; desktop: original + encoded inline */}
         <div className="flex items-center text-sm leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
-          <span className="text-serva-gray-400 md:w-[140px]">
+          <span className="hidden md:inline-block text-serva-gray-400 md:w-[140px]">
             Original: {file.formattedSize}
           </span>
           {isDone && file.encodedSize ? (

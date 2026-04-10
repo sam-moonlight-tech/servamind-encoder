@@ -7,7 +7,7 @@ interface AppShellProps {
 
 function AppShell({ children, className }: AppShellProps) {
   return (
-    <div className={cn("h-screen flex flex-col bg-light-300 overflow-hidden relative", className)}>
+    <div className={cn("h-[100dvh] flex flex-col bg-light-300 overflow-hidden relative", className)}>
       {children}
     </div>
   );

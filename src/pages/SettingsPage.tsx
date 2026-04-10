@@ -124,7 +124,7 @@ function SettingsPage() {
   return (
     <AppShell>
       <NavBarContainer />
-      <div className="flex flex-1 px-2.5 gap-0 min-h-0">
+      <div className="flex flex-1 px-2.5 gap-0 min-h-0 min-w-0">
         <div className="hidden md:flex">
           <Sidebar
             sections={SETTINGS_SECTIONS}

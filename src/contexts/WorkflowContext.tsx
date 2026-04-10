@@ -50,6 +50,7 @@ function workflowReducer(
     case "SET_STAGE":
       return {
         ...state,
+        isScrolled: false,
         processes: {
           ...state.processes,
           [active]: { ...state.processes[active], stage: action.stage },

@@ -64,8 +64,8 @@ function DownloadContainer() {
 
       const zipped = zipSync(zipData);
       const zipBlob = new Blob([zipped as BlobPart], { type: "application/zip" });
-      const dateSuffix = new Date().toISOString().slice(0, 10);
-      triggerBlobDownload(zipBlob, `servamind-${dateSuffix}.zip`);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      triggerBlobDownload(zipBlob, `servamind-${timestamp}.zip`);
     } finally {
       setIsDownloadingAll(false);
     }

@@ -69,7 +69,7 @@ function EncoderPage() {
           signs in (e.g. after account deletion + re-signup in the same browser) */}
       {!isLoading && <OnboardingContainer key={user?.id ?? "anon"} />}
       <NavBarContainer />
-      <div className="flex flex-1 px-2.5 gap-0 min-h-0">
+      <div className="flex flex-1 px-2.5 gap-0 min-h-0 min-w-0">
         <div className="hidden md:flex">
           <Sidebar
             sections={DATA_SECTIONS}

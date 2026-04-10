@@ -235,7 +235,8 @@ function DownloadStageView({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `servamind-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    a.download = `servamind-report-${timestamp}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }, [fileResults, isDecoding]);
@@ -256,12 +257,12 @@ function DownloadStageView({
 
         <div className="hidden md:flex items-center gap-4">
           {!isDecoding && (
-            <Button variant="secondary" size="md" onClick={handleDownloadReport}>
+            <Button variant="secondary" size="md" onClick={handleDownloadReport} className="whitespace-nowrap">
               Download report
               <GoogleDocsIcon />
             </Button>
           )}
-          <Button size="md" onClick={onDownloadAll} disabled={isDownloadingAll}>
+          <Button size="md" onClick={onDownloadAll} disabled={isDownloadingAll} className="whitespace-nowrap">
             {isDownloadingAll ? "Downloading…" : "Download all"}
             {isDownloadingAll
               ? <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
@@ -290,7 +291,7 @@ function DownloadStageView({
                 "linear-gradient(130deg, rgba(194,234,83,0.1) 0%, rgba(189,255,227,0.1) 20%, rgba(169,183,252,0.1) 40%, rgba(252,202,236,0.1) 60%, rgba(255,216,169,0.1) 80%, rgba(254,255,211,0.1) 100%)",
             }}
           >
-            <p className="text-sm text-serva-gray-600 tracking-[-0.42px] leading-[1.1]">
+            <p className="text-sm text-serva-gray-600 tracking-[-0.42px] leading-[1.1] text-center">
               You&apos;re serva files are saving you{" "}
               <span className="font-semibold">
                 {formatFileSize(totalSavedBytes)}
@@ -302,14 +303,14 @@ function DownloadStageView({
       )}
 
       {/* Mobile: download buttons below banner */}
-      <div className="flex md:hidden items-center gap-4 px-4 pb-6">
+      <div className="flex md:hidden flex-col sm:flex-row gap-3 sm:gap-4 px-4 pb-6">
         {!isDecoding && (
-          <Button variant="secondary" size="md" onClick={handleDownloadReport}>
+          <Button variant="secondary" size="md" onClick={handleDownloadReport} className="w-full sm:flex-1 justify-center whitespace-nowrap">
             Download report
             <GoogleDocsIcon />
           </Button>
         )}
-        <Button size="md" onClick={onDownloadAll} className="flex-1 justify-center">
+        <Button size="md" onClick={onDownloadAll} className="w-full sm:flex-1 justify-center whitespace-nowrap">
           Download all
           <DownloadIcon />
         </Button>
