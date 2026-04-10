@@ -380,7 +380,7 @@ function DownloadStageView({
                   </p>
                 </div>
                 <a
-                  href="https://servamind.mintlify.app/tutorials/training/resnet-from-servas-tutorial"
+                  href="https://servamind.mintlify.app/tutorials/training/serva-resnet-tutorial"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="no-underline"

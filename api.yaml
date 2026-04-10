@@ -126,8 +126,10 @@ x-frontend-endpoints:
   - "PATCH /auth/me/onboarding-seen"
   - "POST /auth/logout"
   - "POST /api/encode"
+  - "POST /api/encode/cancel"
   - "POST /api/stream/{file_reference}"
   - "POST /api/decode (initiate + stream)"
+  - "POST /api/decode/cancel"
   - "GET /download/{file_id}"
   - "GET /api/usage"
   - "GET /api/stripe/payment-methods"
@@ -514,6 +516,68 @@ components:
             Single-use token. **Use immediately** — POST it to `/api/stream/{file_reference}`
             on the Backend via the `X-Streaming-Token` header. Expires in 300 seconds.
           example: "K3mL9pQs7vW2xR4t..."
+
+    CancelEncodeRequest:
+      type: object
+      required:
+        - file_reference
+      properties:
+        file_reference:
+          type: string
+          pattern: "^[0-9a-f-]{36}$"
+          description: UUID for this encode attempt (same as initiate encode).
+          example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        idempotency_key:
+          type: string
+          pattern: "^[0-9a-f-]{36}$"
+          description: |
+            Optional. If provided and the idempotency row is still in "processing" (409),
+            it is deleted so the client can call `POST /api/encode` again with a fresh flow.
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+    CancelEncodeApiResponse:
+      type: object
+      required:
+        - encode_token_revoked
+        - job_cancelled
+      properties:
+        encode_token_revoked:
+          type: boolean
+          description: True if an unused encode streaming token was removed from Redis.
+        job_cancelled:
+          type: boolean
+          description: True if the backend still had a **pending** job and removed it.
+        quota_released_bytes:
+          type: integer
+          format: int64
+          nullable: true
+          description: Bytes released from the Redis quota reservation when `job_cancelled` is true.
+        job_cancel_reason:
+          type: string
+          nullable: true
+          description: |
+            When `job_cancelled` is false: `not_found`, `forbidden`, or `not_pending`
+            (e.g. upload already started or finished).
+
+    CancelDecodeRequest:
+      type: object
+      required:
+        - file_reference
+      properties:
+        file_reference:
+          type: string
+          pattern: "^[0-9a-f-]{36}$"
+          description: UUID for this decode attempt (same as initiate decode).
+          example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+
+    CancelDecodeApiResponse:
+      type: object
+      required:
+        - decode_token_revoked
+      properties:
+        decode_token_revoked:
+          type: boolean
+          description: True if an unused decode streaming token was removed from Redis.
 
     StreamCompleteResponse:
       type: object
@@ -1486,6 +1550,53 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /api/encode/cancel:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    post:
+      tags: [Encode]
+      summary: Cancel pending encode (Auth Service)
+      operationId: cancelEncode
+      description: |
+        Revokes the unused encode streaming token, removes a **pending** backend job, and
+        releases the Redis quota reservation for that file size. Call instead of starting
+        `POST /api/stream/{file_reference}` when the user abandons before upload.
+
+        If upload is already in progress, abort the HTTP request to the stream endpoint; this
+        route does not cancel an active upload (`job_cancelled` will be false with
+        `job_cancel_reason`: `not_pending`).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelEncodeRequest"
+            example:
+              file_reference: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+              idempotency_key: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        "200":
+          description: Cancel processed (see body flags).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CancelEncodeApiResponse"
+        "401":
+          description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Backend service is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/stream/{file_reference}:
     servers:
       - url: https://serva.servamind.com
@@ -1657,6 +1768,41 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Redis error while creating streaming token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/decode/cancel:
+    servers:
+      - url: https://serva.servamind.com
+        description: Production
+    post:
+      tags: [Decode]
+      summary: Revoke pending decode token (Auth Service)
+      operationId: cancelDecode
+      description: |
+        Deletes an unused decode streaming token from Redis. Decode does not reserve quota.
+        Use when the user abandons before calling `POST /api/decode` on the backend with the token.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelDecodeRequest"
+            example:
+              file_reference: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+      responses:
+        "200":
+          description: Token revocation attempted (see `decode_token_revoked`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CancelDecodeApiResponse"
+        "401":
+          description: Invalid or expired token.
           content:
             application/json:
               schema:
