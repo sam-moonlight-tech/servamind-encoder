@@ -292,7 +292,7 @@ function DownloadStageView({
             }}
           >
             <p className="text-sm text-serva-gray-600 tracking-[-0.42px] leading-[1.1] text-center">
-              You&apos;re serva files are saving you{" "}
+              Your .serva files are saving you{" "}
               <span className="font-semibold">
                 {formatFileSize(totalSavedBytes)}
               </span>{" "}
