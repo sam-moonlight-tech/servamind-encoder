@@ -39,7 +39,7 @@ const STEPS: StepConfig[] = [
   {
     title: "Your files stay secure by design",
     description:
-      "Servamind encrypts and deterministically encodes your files so you can reuse them safely across models without exposing or rebuilding your data.",
+      "Servamind encrypts and encodes your files so you can reuse them safely across models without exposing or rebuilding your data.",
     video: null,
     illustration: "secure",
   },

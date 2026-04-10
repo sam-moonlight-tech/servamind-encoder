@@ -119,7 +119,7 @@ function WithoutRow({
 
 function ComparisonDiagram({ className }: ComparisonDiagramProps) {
   return (
-    <div className={cn("flex flex-col items-center gap-8 mt-4 pb-12 md:px-0 overflow-hidden", className)}>
+    <div className={cn("flex flex-col items-center gap-8 mt-4 pb-12 md:px-0", className)}>
       {/* Section heading */}
       <div className="flex flex-col items-center gap-4">
         <h3 className="text-2xl font-semibold text-serva-gray-600 leading-[1.2] text-center">
@@ -132,7 +132,7 @@ function ComparisonDiagram({ className }: ComparisonDiagramProps) {
       </div>
 
       {/* Comparison cards */}
-      <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-4 lg:gap-3 xl:gap-4 lg:scale-[0.8] xl:scale-100 origin-top">
+      <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-4 px-4 lg:[zoom:0.75] xl:[zoom:1]">
         {/* Without Servamind */}
         <div className="bg-white border border-light-200 rounded-2xl p-4 lg:p-4 xl:p-8 flex flex-col items-center gap-4 md:gap-6">
           <p className="text-sm font-semibold text-serva-gray-600 tracking-[-0.42px] text-center">
