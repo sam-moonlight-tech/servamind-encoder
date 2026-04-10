@@ -86,9 +86,15 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  // Encoding — every 2nd request fails to test per-file error handling
+  // Encoding — returns 402 when no payment method, otherwise every 2nd request fails
   http.post(`${baseUrl}/api/encode`, async () => {
     await delay(500);
+    if (!mockListPaymentMethodsResponse.has_payment_method) {
+      return HttpResponse.json(
+        { detail: "Payment method required", code: "payment_method_required" },
+        { status: 402 },
+      );
+    }
     encodeInitCount++;
     if (encodeInitCount % 2 === 0) {
       return HttpResponse.json({ detail: "Encoding failed" }, { status: 500 });
@@ -145,6 +151,8 @@ export const handlers = [
   }),
 
   http.delete(`${baseUrl}/api/stripe/payment-methods/:paymentMethodId`, () => {
+    mockListPaymentMethodsResponse.payment_methods = [];
+    mockListPaymentMethodsResponse.has_payment_method = false;
     return new HttpResponse(null, { status: 204 });
   }),
 

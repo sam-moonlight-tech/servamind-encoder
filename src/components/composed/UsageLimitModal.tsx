@@ -21,6 +21,7 @@ interface UsageLimitModalProps {
   uploadBytes: number;
   quotaLimitBytes: number;
   overageRate: number;
+  hasPaymentMethod?: boolean;
   onClose: () => void;
   onRemoveFiles: () => void;
   onContinue: () => void;
@@ -32,14 +33,18 @@ function UsageLimitModal({
   uploadBytes,
   quotaLimitBytes,
   overageRate,
+  hasPaymentMethod = false,
   onClose,
   onRemoveFiles,
   onContinue,
 }: UsageLimitModalProps) {
   const isMobile = useIsMobile();
   const afterUploadBytes = currentUsageBytes + uploadBytes;
-  const overageBytes = afterUploadBytes - quotaLimitBytes;
-  const estimatedCost = Math.max(0, (overageBytes / GB) * overageRate);
+  // Only count the portion of this upload that falls in the overage zone
+  const alreadyOverBy = Math.max(0, currentUsageBytes - quotaLimitBytes);
+  const totalOverage = Math.max(0, afterUploadBytes - quotaLimitBytes);
+  const uploadOverageBytes = totalOverage - alreadyOverBy;
+  const estimatedCost = Math.max(0, (uploadOverageBytes / GB) * overageRate);
   const quotaLabel = quotaLimitBytes >= TB
     ? `${(quotaLimitBytes / TB).toFixed(0)} TB`
     : formatGB(quotaLimitBytes);
@@ -84,7 +89,7 @@ function UsageLimitModal({
             Continue encoding with pay-as-you-go pricing, or remove files.
           </p>
           <p className="text-xs font-semibold text-serva-gray-400">
-            ${overageRate.toFixed(3)} per GB · This upload ≈ ${Math.max(1, Math.round(estimatedCost))}
+            ${overageRate.toFixed(3)} per GB · This upload ≈ {estimatedCost < 0.01 ? "< $0.01" : `$${estimatedCost.toFixed(2)}`}
           </p>
         </div>
       </div>
@@ -94,7 +99,7 @@ function UsageLimitModal({
           Remove files
         </Button>
         <Button variant="primary" size="md" onClick={onContinue}>
-          Continue with payment method
+          {hasPaymentMethod ? "Continue with payment method" : "Add payment method"}
         </Button>
       </div>
     </div>

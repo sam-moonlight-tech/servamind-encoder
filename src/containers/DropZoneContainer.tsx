@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { UploadStageView, PrivateKeyModal, UsageLimitModal, FileTypeAlertModal } from "@/components/composed";
 import { useDropZone } from "@/hooks/behavior";
 import { useFileValidation } from "@/hooks/behavior";
-import { useEncode, useDecode, useUsage } from "@/hooks/data";
+import { useEncode, useDecode, useUsage, usePaymentMethods } from "@/hooks/data";
 import { queryKeys } from "@/hooks/data/keys";
 import { useWorkflow } from "@/contexts/WorkflowContext";
 import { ApiError } from "@/services/api";
@@ -32,6 +32,7 @@ function DropZoneContainer() {
   const { mutateAsync: encodeAsync } = useEncode();
   const { mutateAsync: decodeAsync } = useDecode();
   const { data: usage } = useUsage();
+  const { data: paymentMethodsData } = usePaymentMethods();
   const { process, resetCount, setStage, setProcess, setHasFile, addFileResult, isUploading, setIsUploading } = useWorkflow();
 
   // Restore from cache if this process has persisted files
@@ -245,6 +246,16 @@ function DropZoneContainer() {
               continue;
             }
             if (err instanceof ApiError && err.isPaymentMethodRequired) {
+              stopSimulatedProgress(file);
+              // Reset this file and all remaining "waiting" files back to ready
+              setFileStatuses((prev) => {
+                const next = new Map(prev);
+                for (const [k, s] of next) {
+                  if (s === "encoding" || s === "waiting") next.set(k, "ready");
+                }
+                return next;
+              });
+              setFileProgress(new Map());
               setIsUploading(false);
               setShowPaymentRequiredModal(true);
               return;
@@ -306,6 +317,15 @@ function DropZoneContainer() {
               continue;
             }
             if (err instanceof ApiError && err.isPaymentMethodRequired) {
+              stopSimulatedProgress(file);
+              setFileStatuses((prev) => {
+                const next = new Map(prev);
+                for (const [k, s] of next) {
+                  if (s === "encoding" || s === "waiting") next.set(k, "ready");
+                }
+                return next;
+              });
+              setFileProgress(new Map());
               setIsUploading(false);
               setShowPaymentRequiredModal(true);
               return;
@@ -443,10 +463,16 @@ function DropZoneContainer() {
     }
   }, [exceedsQuota]);
 
+  const hasPaymentMethod = paymentMethodsData?.has_payment_method ?? false;
+
   const handleUsageLimitContinue = useCallback(() => {
     setShowUsageLimitModal(false);
-    setShowKeyModal(true);
-  }, []);
+    if (hasPaymentMethod) {
+      setShowKeyModal(true);
+    } else {
+      navigate("/settings/billing/payment-methods?return=/");
+    }
+  }, [hasPaymentMethod, navigate]);
 
   const handleUsageLimitRemove = useCallback(() => {
     setShowUsageLimitModal(false);
@@ -554,6 +580,7 @@ function DropZoneContainer() {
           uploadBytes={totalUploadBytes}
           quotaLimitBytes={usage.quota_limit_bytes}
           overageRate={0.005}
+          hasPaymentMethod={hasPaymentMethod}
           onClose={() => setShowUsageLimitModal(false)}
           onRemoveFiles={handleUsageLimitRemove}
           onContinue={handleUsageLimitContinue}

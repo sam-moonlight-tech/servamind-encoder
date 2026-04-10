@@ -145,8 +145,8 @@ export const mockPaymentMethod: PaymentMethod = {
 };
 
 export const mockListPaymentMethodsResponse: ListPaymentMethodsResponse = {
-  payment_methods: [mockPaymentMethod],
-  has_payment_method: true,
+  payment_methods: [],
+  has_payment_method: false,
 };
 
 export const mockAuthHealthResponse: AuthHealthResponse = {
