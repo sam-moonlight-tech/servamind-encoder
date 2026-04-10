@@ -291,7 +291,7 @@ function DownloadStageView({
                 "linear-gradient(130deg, rgba(194,234,83,0.1) 0%, rgba(189,255,227,0.1) 20%, rgba(169,183,252,0.1) 40%, rgba(252,202,236,0.1) 60%, rgba(255,216,169,0.1) 80%, rgba(254,255,211,0.1) 100%)",
             }}
           >
-            <p className="text-sm text-serva-gray-600 tracking-[-0.42px] leading-[1.1] text-center">
+            <p className="text-sm text-serva-gray-600 tracking-[-0.42px] leading-normal text-center">
               Your .serva files are saving you{" "}
               <span className="font-semibold">
                 {formatFileSize(totalSavedBytes)}
@@ -310,9 +310,12 @@ function DownloadStageView({
             <GoogleDocsIcon />
           </Button>
         )}
-        <Button size="md" onClick={onDownloadAll} className="w-full sm:flex-1 justify-center whitespace-nowrap">
-          Download all
-          <DownloadIcon />
+        <Button size="md" onClick={onDownloadAll} disabled={isDownloadingAll} className="w-full sm:flex-1 justify-center whitespace-nowrap">
+          {isDownloadingAll ? "Downloading…" : "Download all"}
+          {isDownloadingAll
+            ? <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+            : <DownloadIcon />
+          }
         </Button>
       </div>
 

@@ -7,7 +7,7 @@ import { useFileValidation } from "@/hooks/behavior";
 import { useEncode, useDecode, useUsage, usePaymentMethods } from "@/hooks/data";
 import { queryKeys } from "@/hooks/data/keys";
 import { useWorkflow } from "@/contexts/WorkflowContext";
-import { ApiError } from "@/services/api";
+import { ApiError, encoderService } from "@/services/api";
 import { getFileTypeLabel, formatFileSize, validateFileSize, isCompressedFile } from "@/services/file";
 import type { FileResult, FileTableItem, ProcessType } from "@/types/domain.types";
 
@@ -58,6 +58,7 @@ function DropZoneContainer() {
   const addMoreInputRef = useRef<HTMLInputElement>(null);
   const cancelledKeysRef = useRef<Set<string>>(new Set());
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
+  const fileRefsRef = useRef<Map<string, { fileReference: string; idempotencyKey?: string }>>(new Map());
 
   // When a reset is triggered (e.g. abandon session), clear all local state
   const initialResetCount = useRef(resetCount);
@@ -180,6 +181,7 @@ function DropZoneContainer() {
       setEncodingResults(new Map());
       cancelledKeysRef.current = new Set();
       abortControllersRef.current = new Map();
+      fileRefsRef.current = new Map();
 
       // Set all files to waiting
       setFileStatuses(() => {
@@ -199,12 +201,15 @@ function DropZoneContainer() {
           startSimulatedProgress(file);
           const encodeController = new AbortController();
           abortControllersRef.current.set(fileKey(file), encodeController);
+          const fileReference = crypto.randomUUID();
+          const idempotencyKey = crypto.randomUUID();
+          fileRefsRef.current.set(fileKey(file), { fileReference, idempotencyKey });
           try {
             const start = performance.now();
             const result = await encodeAsync({
               file,
-              fileReference: crypto.randomUUID(),
-              idempotencyKey: crypto.randomUUID(),
+              fileReference,
+              idempotencyKey,
               userPassword: privateKey,
               signal: encodeController.signal,
             });
@@ -284,11 +289,13 @@ function DropZoneContainer() {
           startSimulatedProgress(file);
           const decodeController = new AbortController();
           abortControllersRef.current.set(fileKey(file), decodeController);
+          const fileReference = crypto.randomUUID();
+          fileRefsRef.current.set(fileKey(file), { fileReference });
           try {
             const start = performance.now();
             const result = await decodeAsync({
               file,
-              fileReference: crypto.randomUUID(),
+              fileReference,
               userPassword: privateKey,
               signal: decodeController.signal,
             });
@@ -389,25 +396,28 @@ function DropZoneContainer() {
     const key = fileKey(file);
     const status = currentStatuses.get(key);
 
-    if (status === "encoding") {
-      // In-flight: abort the request and remove the row immediately
+    if (status === "encoding" || status === "waiting") {
+      // In-flight or queued: abort the request, notify backend, and remove row
       cancelledKeysRef.current.add(key);
       abortControllersRef.current.get(key)?.abort();
       abortControllersRef.current.delete(key);
-      setFiles((prev) => {
-        const next = [...prev];
-        next.splice(index, 1);
-        if (next.length === 0) setHasFile(false);
-        return next;
-      });
-      setFileStatuses((prev) => {
-        const next = new Map(prev);
-        next.delete(key);
-        return next;
-      });
-    } else if (status === "waiting") {
-      // Queued but not started: cancel silently and remove row
-      cancelledKeysRef.current.add(key);
+
+      // Fire-and-forget backend cancel to revoke tokens / release quota
+      const refs = fileRefsRef.current.get(key);
+      if (refs) {
+        if (process === "compress") {
+          encoderService.encodeCancel({
+            file_reference: refs.fileReference,
+            idempotency_key: refs.idempotencyKey,
+          }).catch(() => {});
+        } else {
+          encoderService.decodeCancel({
+            file_reference: refs.fileReference,
+          }).catch(() => {});
+        }
+        fileRefsRef.current.delete(key);
+      }
+
       setFiles((prev) => {
         const next = [...prev];
         next.splice(index, 1);
@@ -428,7 +438,7 @@ function DropZoneContainer() {
         return next;
       });
     }
-  }, [setHasFile]);
+  }, [setHasFile, process]);
 
   const handleAddMore = useCallback(() => {
     addMoreInputRef.current?.click();

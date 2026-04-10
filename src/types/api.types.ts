@@ -80,6 +80,19 @@ export interface EncodeStreamResponse {
   roundtrip_hashes_match: boolean;
 }
 
+// Encode Cancel
+export interface EncodeCancelPayload {
+  file_reference: string;
+  idempotency_key?: string;
+}
+
+export interface EncodeCancelResponse {
+  encode_token_revoked: boolean;
+  job_cancelled: boolean;
+  quota_released_bytes: number | null;
+  job_cancel_reason: string | null;
+}
+
 // Decoding
 export interface DecodeInitPayload {
   file_reference: string;
@@ -97,6 +110,15 @@ export interface DecodeStreamResponse {
   original_filename: string;
   file_size_bytes: number;
   download_url: string;
+}
+
+// Decode Cancel
+export interface DecodeCancelPayload {
+  file_reference: string;
+}
+
+export interface DecodeCancelResponse {
+  decode_token_revoked: boolean;
 }
 
 // Usage

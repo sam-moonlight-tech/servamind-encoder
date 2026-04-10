@@ -2,17 +2,23 @@ import type {
   EncodeInitPayload,
   EncodeInitResponse,
   EncodeStreamResponse,
+  EncodeCancelPayload,
+  EncodeCancelResponse,
   DecodeInitPayload,
   DecodeInitResponse,
   DecodeStreamResponse,
+  DecodeCancelPayload,
+  DecodeCancelResponse,
 } from "@/types/api.types";
 import type { HttpClient } from "./client";
 
 export interface EncoderService {
   encodeInit(payload: EncodeInitPayload, signal?: AbortSignal): Promise<EncodeInitResponse>;
   encodeStream(fileRef: string, data: ArrayBuffer, token: string, signal?: AbortSignal): Promise<EncodeStreamResponse>;
+  encodeCancel(payload: EncodeCancelPayload): Promise<EncodeCancelResponse>;
   decodeInit(payload: DecodeInitPayload, signal?: AbortSignal): Promise<DecodeInitResponse>;
   decodeStream(data: ArrayBuffer, token: string, password: string, signal?: AbortSignal): Promise<DecodeStreamResponse>;
+  decodeCancel(payload: DecodeCancelPayload): Promise<DecodeCancelResponse>;
   download(fileId: string, filename?: string, signal?: AbortSignal): Promise<Response>;
 }
 
@@ -31,6 +37,10 @@ export function createEncoderService(client: HttpClient): EncoderService {
       );
     },
 
+    encodeCancel(payload) {
+      return client.post<EncodeCancelResponse>("/api/encode/cancel", payload);
+    },
+
     decodeInit(payload, signal) {
       return client.post<DecodeInitResponse>("/api/decode", payload, signal);
     },
@@ -45,6 +55,10 @@ export function createEncoderService(client: HttpClient): EncoderService {
         },
         signal
       );
+    },
+
+    decodeCancel(payload) {
+      return client.post<DecodeCancelResponse>("/api/decode/cancel", payload);
     },
 
     download(fileId, filename, signal) {

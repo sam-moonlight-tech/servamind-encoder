@@ -107,9 +107,28 @@ export const handlers = [
     return HttpResponse.json(mockEncodeStreamResponse);
   }),
 
+  // Encode Cancel
+  http.post(`${baseUrl}/api/encode/cancel`, async () => {
+    await delay(200);
+    return HttpResponse.json({
+      encode_token_revoked: true,
+      job_cancelled: true,
+      quota_released_bytes: 1024,
+      job_cancel_reason: null,
+    });
+  }),
+
   // Decoding
   http.post(`${baseUrl}/api/decode`, () => {
     return HttpResponse.json(mockDecodeInitResponse);
+  }),
+
+  // Decode Cancel
+  http.post(`${baseUrl}/api/decode/cancel`, async () => {
+    await delay(200);
+    return HttpResponse.json({
+      decode_token_revoked: true,
+    });
   }),
 
   // Download

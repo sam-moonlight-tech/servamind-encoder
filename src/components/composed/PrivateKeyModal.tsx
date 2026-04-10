@@ -49,7 +49,20 @@ function PrivateKeyModal({ open, mode = "encrypt", onClose, onConfirm }: Private
   }, []);
 
   const handleCopy = useCallback(async () => {
-    await navigator.clipboard.writeText(key);
+    try {
+      await navigator.clipboard.writeText(key);
+    } catch {
+      // Fallback for iOS Safari where clipboard API can reject on repeat calls
+      const textarea = document.createElement("textarea");
+      textarea.value = key;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
     setCopied(true);
     if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     copyTimerRef.current = setTimeout(() => setCopied(false), 3000);
