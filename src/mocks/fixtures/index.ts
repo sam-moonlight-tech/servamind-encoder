@@ -99,9 +99,9 @@ export const mockUsageResponse: UsageResponse = {
   user_id: "dev-user",
   beta_tier_active: true,
   beta_expiry_date: "2026-06-01T00:00:00Z",
-  usage_this_month_bytes: 1_099_511_627_676, // ~1 TB minus 100 bytes — any file triggers usage limit modal
-  quota_limit_bytes: 1_099_511_627_776,     // 1 TB
-  quota_used_percent: 99.99,
+  usage_this_month_bytes: 10_737_418_240, // ~10 GB
+  quota_limit_bytes: 1_099_511_627_776,  // 1 TB
+  quota_used_percent: 0.98,
   overage_bytes: 0,
   overage_charges: 0,
   total_lifetime_tb_encoded: 0.9,
@@ -145,8 +145,8 @@ export const mockPaymentMethod: PaymentMethod = {
 };
 
 export const mockListPaymentMethodsResponse: ListPaymentMethodsResponse = {
-  payment_methods: [],
-  has_payment_method: false,
+  payment_methods: [mockPaymentMethod],
+  has_payment_method: true,
 };
 
 export const mockAuthHealthResponse: AuthHealthResponse = {

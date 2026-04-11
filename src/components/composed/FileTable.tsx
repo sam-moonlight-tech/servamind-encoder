@@ -302,7 +302,18 @@ function FileRow({
           </span>
         </div>
 
+        {/* Error message — below filename */}
+        {isError && (
+          <div className="flex items-center gap-1.5">
+            <WarningIcon />
+            <span className="text-sm text-[#660000] leading-normal tracking-[-0.42px]">
+              {file.sizeError ?? `${processLabel} failed`}
+            </span>
+          </div>
+        )}
+
         {/* Size info — mobile: encoded only; desktop: original + encoded inline */}
+        {!isError && (
         <div className="flex items-center text-sm leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
           <span className="hidden md:inline-block text-serva-gray-400 md:w-[140px]">
             Original: {file.formattedSize}
@@ -324,6 +335,7 @@ function FileRow({
             </span>
           )}
         </div>
+        )}
       </div>
 
       {/* Right side: status */}
@@ -439,27 +451,17 @@ function FileRow({
           </>
         )}
 
-        {isError && (
-          <>
-            <div className="flex items-center gap-2">
-              <WarningIcon />
-              <span className="text-sm text-[#660000] leading-[1.1] tracking-[-0.42px] whitespace-nowrap">
-                {file.sizeError ?? `${processLabel} failed`}
-              </span>
-            </div>
-            {onRemove && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemove(index);
-                }}
-                className="cursor-pointer hover:opacity-70"
-              >
-                <XMarkIcon />
-              </button>
-            )}
-          </>
+        {isError && onRemove && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(index);
+            }}
+            className="cursor-pointer hover:opacity-70"
+          >
+            <XMarkIcon />
+          </button>
         )}
       </div>
     </div>

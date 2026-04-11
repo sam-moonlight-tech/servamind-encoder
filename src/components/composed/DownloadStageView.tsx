@@ -277,7 +277,7 @@ function DownloadStageView({
         <FileTable
           files={fileTableItems}
           onDownload={handleDownloadByIndex}
-          className="max-h-[60vh] md:max-h-[448px] overflow-y-auto scrollbar-visible"
+          className="max-h-[448px] overflow-y-auto scrollbar-visible"
         />
       </div>
 
@@ -291,7 +291,7 @@ function DownloadStageView({
                 "linear-gradient(130deg, rgba(194,234,83,0.1) 0%, rgba(189,255,227,0.1) 20%, rgba(169,183,252,0.1) 40%, rgba(252,202,236,0.1) 60%, rgba(255,216,169,0.1) 80%, rgba(254,255,211,0.1) 100%)",
             }}
           >
-            <p className="text-sm text-serva-gray-600 tracking-[-0.42px] leading-normal text-center">
+            <p className="text-sm text-serva-gray-600 tracking-[-0.42px] leading-[1.1] text-center">
               Your .serva files are saving you{" "}
               <span className="font-semibold">
                 {formatFileSize(totalSavedBytes)}

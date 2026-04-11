@@ -20,7 +20,8 @@ export function createMockAuthProvider(): AuthProvider {
 
   return {
     async initialize() {
-      // Don't auto-authenticate — let the onboarding flow handle sign-in
+      currentUser = MOCK_USER;
+      listeners.forEach((cb) => cb(currentUser));
     },
 
     getUser() {
